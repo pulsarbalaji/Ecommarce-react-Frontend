@@ -1,95 +1,85 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaEnvelope, FaMobileAlt } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { auth, googleProvider } from "../firebase";
 import {
-  createUserWithEmailAndPassword,
   signInWithPopup,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
 } from "firebase/auth";
+import api from "../utils/base_url";
 
 const Register = () => {
   const [registerMethod, setRegisterMethod] = useState("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
 
-
+  // 📌 EMAIL REGISTER -> Backend API
   const handleEmailRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast.success("Registered successfully!");
+      const res = await api.post("register/email-step1/", {
+        email,
+        password,
+      });
+
+      toast.success(res.data.message || "OTP sent to email");
+
+      // save session_id for verification
+      sessionStorage.setItem("session_id", res.data.session_id);
+
+      navigate("/verification", { state: { type: "email" } });
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Email register failed");
+    } finally {
+      setLoading(false);
     }
   };
 
-const handleGoogleRegister = async () => {
-  try {
-    // Sign in with Firebase Google popup
-    const result = await signInWithPopup(auth, googleProvider);
-
-    // Get Firebase ID token
-    const idToken = await result.user.getIdToken();
-
-    // Send ID token to Django backend
-    const res = await fetch("http://127.0.0.1:8000/api/google/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: idToken }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Google registration failed");
-
-    // Save JWT from Django
-    localStorage.setItem("access_token", data.access);
-    localStorage.setItem("refresh_token", data.refresh);
-
-    toast.success("Google registration successful!");
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
-
-
-
-  const setupRecaptcha = () => {
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      "recaptcha-container",
-      { size: "invisible" },
-      auth
-    );
-  };
-
+  // 📌 PHONE REGISTER -> Backend API
   const handlePhoneRegister = async (e) => {
     e.preventDefault();
-    setupRecaptcha();
-    const appVerifier = window.recaptchaVerifier;
+    setLoading(true);
     try {
-      const result = await signInWithPhoneNumber(auth, phone, appVerifier);
-      setConfirmationResult(result);
-      toast.success("OTP sent to phone!");
+      const res = await api.post("phone-register-step1/", {
+        phone,
+      });
+
+      toast.success(res.data.message || "OTP sent to phone");
+
+      // save session_id for verification
+      sessionStorage.setItem("session_id", res.data.session_id);
+
+      navigate("/verification", { state: { type: "phone" } });
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Phone register failed");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOtpVerify = async (e) => {
-    e.preventDefault();
+  // 📌 GOOGLE REGISTER -> Keep Firebase + Backend integration
+  const handleGoogleRegister = async () => {
     try {
-      await confirmationResult.confirm(otp);
-      toast.success("Phone registration successful!");
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      const res = await api.post("google/", { token: idToken });
+
+      // Save JWT tokens
+      localStorage.setItem("access_token", res.data.access);
+      localStorage.setItem("refresh_token", res.data.refresh);
+
+      toast.success("Google registration successful!");
+      navigate("/dashboard");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.error || error.message);
     }
   };
 
@@ -145,7 +135,11 @@ const handleGoogleRegister = async () => {
 
         {/* Email registration */}
         {registerMethod === "email" && (
-          <motion.form onSubmit={handleEmailRegister} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.form
+            onSubmit={handleEmailRegister}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <div className="form-floating mb-1">
               <input
                 type="email"
@@ -181,8 +175,12 @@ const handleGoogleRegister = async () => {
               <label style={{ color: "#555" }}>Password</label>
             </div>
             <motion.div className="d-grid mb-1">
-              <motion.button whileHover={{ scale: 1.05 }} className="btn btn-light btn-lg fw-bold text-dark">
-                Register
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="btn btn-light btn-lg fw-bold text-dark"
+                disabled={loading}
+              >
+                {loading ? "Please wait..." : "Register"}
               </motion.button>
             </motion.div>
           </motion.form>
@@ -190,60 +188,34 @@ const handleGoogleRegister = async () => {
 
         {/* Phone registration */}
         {registerMethod === "phone" && (
-          <>
-            {!confirmationResult ? (
-              <motion.form onSubmit={handlePhoneRegister}>
-                <div className="form-floating mb-1">
-                  <input
-                    type="tel"
-                    className="form-control"
-                    placeholder="+91 9876543210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    style={{
-                      borderRadius: "12px",
-                      background: "#f0f0f0",
-                      color: "#333",
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                  <label style={{ color: "#555" }}>Phone Number</label>
-                </div>
-                <div id="recaptcha-container"></div>
-                <motion.div className="d-grid mb-1">
-                  <motion.button whileHover={{ scale: 1.05 }} className="btn btn-light btn-lg fw-bold text-dark">
-                    Send OTP
-                  </motion.button>
-                </motion.div>
-              </motion.form>
-            ) : (
-              <motion.form onSubmit={handleOtpVerify}>
-                <div className="form-floating mb-1">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                    style={{
-                      borderRadius: "12px",
-                      background: "#f0f0f0",
-                      color: "#333",
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                  <label style={{ color: "#555" }}>OTP</label>
-                </div>
-                <motion.div className="d-grid mb-1">
-                  <motion.button whileHover={{ scale: 1.05 }} className="btn btn-light btn-lg fw-bold text-dark">
-                    Verify OTP
-                  </motion.button>
-                </motion.div>
-              </motion.form>
-            )}
-          </>
+          <motion.form onSubmit={handlePhoneRegister}>
+            <div className="form-floating mb-1">
+              <input
+                type="tel"
+                className="form-control"
+                placeholder="+91 9876543210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={{
+                  borderRadius: "12px",
+                  background: "#f0f0f0",
+                  color: "#333",
+                  border: "1px solid #ddd",
+                }}
+              />
+              <label style={{ color: "#555" }}>Phone Number</label>
+            </div>
+            <motion.div className="d-grid mb-1">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="btn btn-light btn-lg fw-bold text-dark"
+                disabled={loading}
+              >
+                {loading ? "Sending..." : "Send OTP"}
+              </motion.button>
+            </motion.div>
+          </motion.form>
         )}
 
         {/* Google */}
@@ -254,7 +226,11 @@ const handleGoogleRegister = async () => {
           <motion.button
             onClick={handleGoogleRegister}
             className="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center"
-            style={{ borderRadius: "12px", background: "#f0f0f0", color: "#333" }}
+            style={{
+              borderRadius: "12px",
+              background: "#f0f0f0",
+              color: "#333",
+            }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

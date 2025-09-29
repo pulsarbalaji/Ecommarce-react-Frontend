@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { addCart } from "../redux/action";
 
 import { Footer, Navbar } from "../components";
+import api from "../utils/base_url"; 
 
 const Product = () => {
   const { id } = useParams();
@@ -22,16 +23,18 @@ const Product = () => {
       setLoadingSimilar(true);
 
       try {
-        const res = await fetch(`https://fakestoreapi.com/products/${id}`);
-        const data = await res.json();
+        // Fetch single product
+        const res = await api.get(`/productlist/${id}/`);
+        const data = res.data?.data;
         setProduct(data);
         setLoading(false);
 
-        const resSimilar = await fetch(
-          `https://fakestoreapi.com/products/category/${data.category}`
-        );
-        const dataSimilar = await resSimilar.json();
-        setSimilarProducts(dataSimilar.filter((item) => item.id !== data.id));
+        // Fetch similar products by category id
+        if (data?.category) {
+          const resSimilar = await api.get(`/productfilter/${data.category}/?page=1`);
+          const dataSimilar = resSimilar.data?.data || [];
+          setSimilarProducts(dataSimilar.filter((item) => item.id !== data.id));
+        }
         setLoadingSimilar(false);
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -69,20 +72,21 @@ const Product = () => {
           <div className="product-image-wrapper shadow-sm rounded bg-light p-3">
             <img
               className="img-fluid"
-              src={product?.image}
-              alt={product?.title}
+              src={`http://127.0.0.1:8000${product?.product_image}`}
+              alt={product?.product_name}
               style={{ objectFit: "contain", maxHeight: "400px" }}
             />
           </div>
         </div>
         <div className="col-md-6 py-3">
-          <h6 className="text-uppercase text-muted">{product?.category}</h6>
-          <h2 className="fw-bold">{product?.title}</h2>
+          <h6 className="text-uppercase text-muted">{product?.category_name}</h6>
+          <h2 className="fw-bold">{product?.product_name}</h2>
           <p className="lead">
-            Rating: {product?.rating?.rate} <i className="fa fa-star text-warning"></i>
+            Rating: {product?.average_rating}{" "}
+            <i className="fa fa-star text-warning"></i>
           </p>
-          <h3 className="text-success my-3">${product?.price}</h3>
-          <p className="text-muted">{product?.description}</p>
+          <h3 className="text-success my-3">₹{product?.price}</h3>
+          <p className="text-muted">{product?.product_description}</p>
           <div className="d-flex flex-wrap">
             <button
               className="btn btn-outline-dark me-2 mb-2"
@@ -121,18 +125,23 @@ const Product = () => {
             <div className="p-3 bg-light rounded">
               <img
                 className="card-img-top"
-                src={item.image}
-                alt={item.title}
+                src={`http://127.0.0.1:8000${item.product_image}`}
+                alt={item.product_name}
                 height={180}
                 style={{ objectFit: "contain" }}
               />
             </div>
             <div className="card-body">
-              <h6 className="card-title text-dark">{item.title.substring(0, 20)}...</h6>
-              <p className="text-success">${item.price}</p>
+              <h6 className="card-title text-dark">
+                {item.product_name.substring(0, 20)}...
+              </h6>
+              <p className="text-success">₹{item.price}</p>
               <div className="d-flex justify-content-center flex-wrap">
-                <Link to={`/product/${item.id}`} className="btn btn-outline-dark btn-sm me-2 mb-2">
-                  Buy Now
+                <Link
+                  to={`/product/${item.id}`}
+                  className="btn btn-outline-dark btn-sm me-2 mb-2"
+                >
+                  View
                 </Link>
                 <button
                   className="btn btn-dark btn-sm mb-2"
