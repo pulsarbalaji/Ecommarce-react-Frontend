@@ -3,39 +3,45 @@ import api from "../utils/base_url";
 import { AuthContext } from "../context/AuthContext";
 
 const ProfileUpdateForm = () => {
-  const { userId } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     full_name: "",
     address: "",
     date_of_birth: "",
     gender: "",
-    profile_photo: null,
+    profile_image: null,
   });
   const [preview, setPreview] = useState(null);
-
   // Fetch profile
   useEffect(() => {
-    if (userId) {
-      api.get(`/profile/${userId}/`).then((res) => {
+    if (user.customer_details.id) {
+      api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
         const data = res.data;
+        console.log("Test", res.data);
+        const capitalize = (str) => {
+          if (!str) return "";
+          const lowerStr = String(str).toLowerCase();
+          return lowerStr.charAt(0).toUpperCase() + lowerStr.slice(1);
+        };
+
         setFormData({
-          full_name: data.full_name || "",
-          address: data.address || "",
-          date_of_birth: data.date_of_birth || "",
-          gender: data.gender || "",
-          profile_photo: null,
+          full_name: data.data.full_name || "",
+          address: data.data.address || "",
+          date_of_birth: data.data.dob || "",
+          gender: capitalize(data.data.gender) || "",
+          profile_image: null,
         });
-        if (data.profile_photo) {
-          setPreview(`http://127.0.0.1:8000${data.profile_photo}`);
+        if (data.data.profile_image) {
+          setPreview(`http://127.0.0.1:8000${data.data.profile_image}`);
         }
       });
     }
-  }, [userId]);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "profile_photo" && files?.[0]) {
-      setFormData({ ...formData, profile_photo: files[0] });
+    if (name === "profile_image" && files?.[0]) {
+      setFormData({ ...formData, profile_image: files[0] });
       setPreview(URL.createObjectURL(files[0]));
     } else {
       setFormData({ ...formData, [name]: value });
@@ -49,10 +55,23 @@ const ProfileUpdateForm = () => {
       if (formData[key]) fd.append(key, formData[key]);
     });
 
-    await api.put(`/profile/${userId}/`, fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    alert("Profile updated successfully!");
+    try {
+      if (user?.customer_details?.id) {
+        // PUT if user has profile
+        await api.put(`customerdetails/${user.customer_details.id}/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        // POST if no profile exists
+        await api.post("customerdetails/", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+      alert("Profile saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Error saving profile. Please try again.");
+    }
   };
 
   return (
@@ -149,7 +168,7 @@ const ProfileUpdateForm = () => {
                   <input
                     type="file"
                     className="form-control"
-                    name="profile_photo"
+                    name="profile_image"
                     onChange={handleChange}
                   />
                   {preview && (

@@ -150,7 +150,8 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
-    <ProfileUpdateForm />
+    {user && <ProfileUpdateForm />}
+
     </>
   );
 };
