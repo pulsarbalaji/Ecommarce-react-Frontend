@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useContext } from "react";
 import { Footer, Navbar } from "../components";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/base_url";
 import { clearCart } from "../redux/reducer/handleCart";
+import { AuthContext } from "../context/AuthContext";
 
 const Checkout = () => {
   const cartItems = useSelector((state) => state.handleCart); // no updates during typing
+  const { user } = useContext(AuthContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -64,14 +66,14 @@ const Checkout = () => {
         product: item.id,
         quantity: item.qty,
         price: item.price,
+        total: item.price * item.qty,
       }));
 
       const payload = {
-        customer: {
+          customer:user.customer_details.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
           phone: formData.phone,
-        },
         billing_address: formData.billingAddress,
         shipping_address: formData.shippingAddress,
         payment_method: formData.paymentMethod,
