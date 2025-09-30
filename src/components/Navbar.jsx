@@ -11,13 +11,16 @@ const Navbar = () => {
   
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef();
-
+  
+ 
   
   const handleProfileClick = () => {
     // just open modal using bootstrap
     const modal = new window.bootstrap.Modal(
       document.getElementById("profileModal")
     );
+    console.log("modal",modal);
+    
     modal.show();
     
   };

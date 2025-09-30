@@ -9,4 +9,5 @@ export { default as Register } from './Register';
 export { default as Checkout } from './Checkout';
 export { default as PageNotFound } from './PageNotFound';
 export { default as Verification } from './Verification';
+export { default as OrderConfirmation } from './OrderConfirmation';
 

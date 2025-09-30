@@ -13,30 +13,40 @@ const ProfileUpdateForm = () => {
   });
   const [preview, setPreview] = useState(null);
   // Fetch profile
-  useEffect(() => {
-    if (user.customer_details.id) {
-      api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
-        const data = res.data;
-        console.log("Test", res.data);
-        const capitalize = (str) => {
-          if (!str) return "";
-          const lowerStr = String(str).toLowerCase();
-          return lowerStr.charAt(0).toUpperCase() + lowerStr.slice(1);
-        };
+useEffect(() => {
+  if (user?.customer_details?.id) {
+    api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
+      const data = res.data;
 
-        setFormData({
-          full_name: data.data.full_name || "",
-          address: data.data.address || "",
-          date_of_birth: data.data.dob || "",
-          gender: capitalize(data.data.gender) || "",
-          profile_image: null,
-        });
-        if (data.data.profile_image) {
-          setPreview(`http://127.0.0.1:8000${data.data.profile_image}`);
-        }
+      const capitalize = (str) => {
+        if (!str) return "";
+        const lowerStr = String(str).toLowerCase();
+        return lowerStr.charAt(0).toUpperCase() + lowerStr.slice(1);
+      };
+      
+
+      setFormData({
+        full_name: data.data.full_name || user.customer_details.full_name || "",
+        address: data.data.address || user.customer_details.address || "",
+        date_of_birth: data.data.dob || user.customer_details.dob || "",
+        gender: capitalize(data.data.gender || user.customer_details.gender) || "",
+        profile_image: null,
       });
-    }
-  }, [user]);
+
+      if (data.data.profile_image) {
+        const imgUrl = data.data.profile_image.startsWith("http")
+          ? data.data.profile_image
+          : `http://127.0.0.1:8000${data.data.profile_image}`;
+        setPreview(imgUrl);
+      } else if (user.login_method === "google" && user.customer_details.profile_image) {    
+        setPreview(user.customer_details.profile_image);
+      } else if (user.profile_image) {
+        setPreview(user.profile_image);
+      }
+    });
+  }
+}, [user]);
+
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -73,6 +83,10 @@ const ProfileUpdateForm = () => {
       alert("Error saving profile. Please try again.");
     }
   };
+
+
+   
+  
 
   return (
     <div
