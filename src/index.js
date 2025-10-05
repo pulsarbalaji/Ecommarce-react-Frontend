@@ -18,6 +18,7 @@ import {
   Checkout,
   PageNotFound,
   Verification,
+  OrderConfirmation,
 } from "./pages";
 import ScrollToTop from "./components/ScrollToTop";
 import { Toaster } from "react-hot-toast";
@@ -46,6 +47,7 @@ root.render(
               <Route path="/cart" element={<ProtectedRoute> <Cart /> </ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute> <Checkout /> </ProtectedRoute>} />
               <Route path="/product/:id" element={ <ProtectedRoute> <Product /> </ProtectedRoute> } />
+              <Route path="/order-confirmation/:orderId" element={ <ProtectedRoute> <OrderConfirmation /> </ProtectedRoute> } />
 
               {/* Public routes */}
               <Route path="/login" element={<Login />} />

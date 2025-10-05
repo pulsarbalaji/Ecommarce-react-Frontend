@@ -19,6 +19,7 @@ const Product = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      console.log("Razorpay Key:", process.env.REACT_APP_RAZORPAY_KEY); // debug
       setLoading(true);
       setLoadingSimilar(true);
 
