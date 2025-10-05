@@ -55,81 +55,81 @@ const Checkout = () => {
   }, [cartItems]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!cartItems.length) {
-    alert("Cart is empty!");
-    return;
-  }
+    e.preventDefault();
+    if (!cartItems.length) {
+      alert("Cart is empty!");
+      return;
+    }
 
-  try {
-    const itemsPayload = cartItems.map((item) => ({
-      product: item.id,
-      quantity: item.qty,
-      price: item.price,
-      total: item.price * item.qty,
-    }));
+    try {
+      const itemsPayload = cartItems.map((item) => ({
+        product: item.id,
+        quantity: item.qty,
+        price: item.price,
+        total: item.price * item.qty,
+      }));
 
-    const payload = {
-      customer: user.customer_details.id,
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      phone: formData.phone,
-      billing_address: formData.billingAddress,
-      shipping_address: formData.shippingAddress,
-      payment_method: formData.paymentMethod,
-      items: itemsPayload,
-      subtotal,
-      shipping_cost: shipping,
-      total_amount: totalAmount,
-    };
-
-    // ✅ Only one call
-    const res = await api.post("orders/", payload);
-    const { order, razorpay_order } = res.data;
-
-    if (formData.paymentMethod === "online") {
-      console.log("Razorpay Key:", process.env.REACT_APP_RAZORPAY_KEY); // debug
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY,
-        amount: razorpay_order.amount,
-        currency: razorpay_order.currency,
-        name: "My Shop",
-        description: "Order Payment",
-        order_id: razorpay_order.id,   // Razorpay order id
-        handler: async function (response) {
-          try {
-            await api.post("verify-payment/", {
-              order_id: order.id,    // DB order id
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            dispatch(clearCart());
-            navigate(`/order-confirmation/${order.id}`);
-          } catch (err) {
-            alert("Payment verification failed");
-            console.error(err);
-          }
-        },
-        prefill: {
-          name: `${formData.firstName} ${formData.lastName}`,
-          contact: formData.phone,
-        },
-        theme: { color: "#3399cc" },
+      const payload = {
+        customer: user.customer_details.id,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        billing_address: formData.billingAddress,
+        shipping_address: formData.shippingAddress,
+        payment_method: formData.paymentMethod,
+        items: itemsPayload,
+        subtotal,
+        shipping_cost: shipping,
+        total_amount: totalAmount,
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } else {
-      alert("Order placed with Cash on Delivery!");
-      dispatch(clearCart());
-      navigate(`/order-confirmation/${order.id}`);
+      // ✅ Only one call
+      const res = await api.post("orders/", payload);
+      const { order, razorpay_order } = res.data;
+
+      if (formData.paymentMethod === "online") {
+        console.log("Razorpay Key:", process.env.REACT_APP_RAZORPAY_KEY); // debug
+        const options = {
+          key: process.env.REACT_APP_RAZORPAY_KEY,
+          amount: razorpay_order.amount,
+          currency: razorpay_order.currency,
+          name: "My Shop",
+          description: "Order Payment",
+          order_id: razorpay_order.id,   // Razorpay order id
+          handler: async function (response) {
+            try {
+              await api.post("verify-payment/", {
+                order_id: order.id,    // DB order id
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              dispatch(clearCart());
+              navigate(`/order-confirmation/${order.id}`);
+            } catch (err) {
+              alert("Payment verification failed");
+              console.error(err);
+            }
+          },
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            contact: formData.phone,
+          },
+          theme: { color: "#3399cc" },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        alert("Order placed with Cash on Delivery!");
+        dispatch(clearCart());
+        navigate(`/order-confirmation/${order.id}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong!");
     }
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong!");
-  }
-};
+  };
 
 
   if (!cartItems.length) {
@@ -249,15 +249,17 @@ const Checkout = () => {
                     )}
                     <div className="col-12">
                       <select
-                        className="form-select"
+                        className="form-select w-100"
                         name="paymentMethod"
                         value={formData.paymentMethod}
                         onChange={handleChange}
+                        style={{ minWidth: "100%" }}
                       >
                         <option value="cod">Cash on Delivery</option>
                         <option value="online">Online Payment</option>
                       </select>
                     </div>
+
                   </div>
                   <hr className="my-4" />
                   <button type="submit" className="w-100 btn btn-primary">

@@ -118,7 +118,7 @@ const Products = () => {
           <div key={product.id} className="card text-center h-100">
             <img
               className="card-img-top p-3"
-              src={`http://127.0.0.1:8000${product.product_image}`}
+              src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
               alt={product.product_name}
               style={{ height: "180px", objectFit: "contain" }}
             />
