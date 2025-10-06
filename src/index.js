@@ -26,6 +26,8 @@ import { AuthProvider } from "./context/AuthContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileUpdateForm from "./pages/ProfileUpdateForm";
+import OrderTracking from "./pages/OrderTracking";
+import OrderHistory from "./pages/OrderHistory";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -48,6 +50,8 @@ root.render(
               <Route path="/checkout" element={<ProtectedRoute> <Checkout /> </ProtectedRoute>} />
               <Route path="/product/:id" element={ <ProtectedRoute> <Product /> </ProtectedRoute> } />
               <Route path="/order-confirmation/:orderId" element={ <ProtectedRoute> <OrderConfirmation /> </ProtectedRoute> } />
+              <Route path="/order-tracking/:orderNumber" element={ <ProtectedRoute> <OrderTracking /> </ProtectedRoute> } />
+              <Route path="/orderhistory" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
 
               {/* Public routes */}
               <Route path="/login" element={<Login />} />

@@ -12,41 +12,34 @@ const ProfileUpdateForm = () => {
     profile_image: null,
   });
   const [preview, setPreview] = useState(null);
+
   // Fetch profile
-useEffect(() => {
-  if (user?.customer_details?.id) {
-    api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
-      const data = res.data;
+  useEffect(() => {
+    if (user?.customer_details?.id) {
+      api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
+        const data = res.data;
 
-      const capitalize = (str) => {
-        if (!str) return "";
-        const lowerStr = String(str).toLowerCase();
-        return lowerStr.charAt(0).toUpperCase() + lowerStr.slice(1);
-      };
-      
+        setFormData({
+          full_name: data.data.full_name || user.customer_details.full_name || "",
+          address: data.data.address || user.customer_details.address || "",
+          date_of_birth: data.data.dob || user.customer_details.dob || "",
+          gender: data.data.gender || user.customer_details.gender || "",
+          profile_image: null,
+        });
 
-      setFormData({
-        full_name: data.data.full_name || user.customer_details.full_name || "",
-        address: data.data.address || user.customer_details.address || "",
-        date_of_birth: data.data.dob || user.customer_details.dob || "",
-        gender: capitalize(data.data.gender || user.customer_details.gender) || "",
-        profile_image: null,
+        if (data.data.profile_image) {
+          const imgUrl = data.data.profile_image.startsWith("http")
+            ? data.data.profile_image
+            : `http://127.0.0.1:8000${data.data.profile_image}`;
+          setPreview(imgUrl);
+        } else if (user.login_method === "google" && user.customer_details.profile_image) {
+          setPreview(user.customer_details.profile_image);
+        } else if (user.profile_image) {
+          setPreview(user.profile_image);
+        }
       });
-
-      if (data.data.profile_image) {
-        const imgUrl = data.data.profile_image.startsWith("http")
-          ? data.data.profile_image
-          : `http://127.0.0.1:8000${data.data.profile_image}`;
-        setPreview(imgUrl);
-      } else if (user.login_method === "google" && user.customer_details.profile_image) {    
-        setPreview(user.customer_details.profile_image);
-      } else if (user.profile_image) {
-        setPreview(user.profile_image);
-      }
-    });
-  }
-}, [user]);
-
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -67,12 +60,10 @@ useEffect(() => {
 
     try {
       if (user?.customer_details?.id) {
-        // PUT if user has profile
         await api.put(`customerdetails/${user.customer_details.id}/`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
-        // POST if no profile exists
         await api.post("customerdetails/", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -84,9 +75,17 @@ useEffect(() => {
     }
   };
 
-
-   
-  
+  // Reset form on close
+  const resetForm = () => {
+    setFormData({
+      full_name: "",
+      address: "",
+      date_of_birth: "",
+      gender: "",
+      profile_image: null,
+    });
+    setPreview(null);
+  };
 
   return (
     <div
@@ -99,11 +98,13 @@ useEffect(() => {
         <div className="modal-content">
           <form onSubmit={handleSubmit}>
             <div className="modal-header">
-              <h5 className="modal-title ">Update Profile</h5>
+              <h5 className="modal-title">Update Profile</h5>
               <button
                 type="button"
                 className="btn-close"
                 data-bs-dismiss="modal"
+                aria-label="Close"
+                onClick={resetForm}
               ></button>
             </div>
 
@@ -190,11 +191,7 @@ useEffect(() => {
                       src={preview}
                       alt="preview"
                       className="mt-2 rounded"
-                      style={{
-                        width: "120px",
-                        height: "120px",
-                        objectFit: "cover",
-                      }}
+                      style={{ width: "120px", height: "120px", objectFit: "cover" }}
                     />
                   )}
                 </div>
@@ -206,6 +203,7 @@ useEffect(() => {
                 type="button"
                 className="btn btn-dark"
                 data-bs-dismiss="modal"
+                onClick={resetForm}
               >
                 Close
               </button>
