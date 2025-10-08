@@ -88,7 +88,7 @@ const Checkout = () => {
       const { order, razorpay_order } = res.data;
 
       if (formData.paymentMethod === "online") {
-        console.log("Razorpay Key:", process.env.REACT_APP_RAZORPAY_KEY); // debug
+        console.log("Razorpay Key:", process.env.REACT_APP_RAZORPAY_KEY);
         const options = {
           key: process.env.REACT_APP_RAZORPAY_KEY,
           amount: razorpay_order.amount,
