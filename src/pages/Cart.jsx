@@ -14,9 +14,11 @@ const Cart = () => {
   const EmptyCart = () => (
     <div className="container">
       <div className="row">
-        <div className="col-md-12 py-5 bg-light text-center">
-          <h4 className="p-3 display-5">Your Cart is Empty</h4>
-          <Link to="/" className="btn btn-outline-dark mx-4">
+        <div className="col-12 py-5 bg-light text-center rounded-theme">
+          <h4 className="p-3 display-5" style={{ color: "#7a563a" }}>
+            Your Cart is Empty
+          </h4>
+          <Link to="/" className="btn btn-outline-themed mx-4">
             <i className="fa fa-arrow-left"></i> Continue Shopping
           </Link>
         </div>
@@ -35,67 +37,60 @@ const Cart = () => {
     });
 
     return (
-      <section className="h-100 gradient-custom">
+      <section className="h-100 gradient-custom-themed">
         <div className="container py-5">
           <div className="row d-flex justify-content-center my-4">
             {/* Cart items */}
-            <div className="col-md-8">
-              <div className="card mb-4">
-                <div className="card-header py-3">
-                  <h5 className="mb-0">Item List</h5>
+            <div className="col-lg-8 col-md-10 col-12 mb-4">
+              <div className="card mb-4 rounded-theme shadow-theme">
+                <div className="card-header py-3 bg-light">
+                  <h5 className="mb-0 text-theme-dark">Item List</h5>
                 </div>
-                <div className="card-body">
+                <div className="card-body p-3">
                   {state.map((item) => (
-                    <div key={item.id}>
-                      <div className="row d-flex align-items-center">
-                        <div className="col-lg-3 col-md-12 text-center">
+                    <div key={item.id} className="mb-3 pb-3 border-bottom border-theme-light">
+                      <div className="row align-items-center g-2">
+                        <div className="col-4 col-sm-3 text-center">
                           <img
-                            src={`http://127.0.0.1:8000${item.product_image}`} 
+                            src={`http://127.0.0.1:8000${item.product_image}`}
                             alt={item.product_name}
-                            width={100}
-                            height={75}
-                            className="rounded"
-                            style={{ objectFit: "contain" }}
+                            className="rounded-theme img-fluid"
+                            style={{ maxHeight: "90px", objectFit: "contain" }}
                           />
                         </div>
 
-                        <div className="col-lg-5 col-md-6">
-                          <p>
-                            <strong>{item.product_name}</strong>
+                        <div className="col-8 col-sm-5">
+                          <p className="text-theme-dark fw-semibold mb-1" style={{ fontSize: "1rem" }}>
+                            {item.product_name}
+                          </p>
+                          <p className="text-theme-muted mb-1" style={{ fontSize: "0.9rem" }}>
+                            ₹{Number(item.price).toLocaleString()} each
                           </p>
                         </div>
 
-                        <div className="col-lg-4 col-md-6">
-                          <div
-                            className="d-flex mb-2"
-                            style={{ maxWidth: "200px" }}
-                          >
+                        <div className="col-12 col-sm-4 d-flex align-items-center justify-content-between justify-content-sm-end gap-2">
+                          <div className="input-group input-group-sm quantity-controls" style={{ maxWidth: "120px" }}>
                             <button
-                              className="btn btn-outline-dark btn-sm"
+                              className="btn btn-themed-outline"
                               onClick={() => removeItem(item)}
+                              aria-label={`Remove one ${item.product_name}`}
                             >
                               <i className="fas fa-minus"></i>
                             </button>
-
-                            <p className="mx-3 mb-0 fw-bold">{item.qty}</p>
-
+                            <span className="input-group-text qty-display">{item.qty}</span>
                             <button
-                              className="btn btn-outline-dark btn-sm"
+                              className="btn btn-themed-outline"
                               onClick={() => addItem(item)}
+                              aria-label={`Add one ${item.product_name}`}
                             >
                               <i className="fas fa-plus"></i>
                             </button>
                           </div>
-
-                          <p className="text-start text-md-center mb-0">
-                            <strong>
-                              {item.qty} x ₹{Number(item.price).toLocaleString()}
-                            </strong>
+                          <p className="text-theme-dark fw-bold mb-0 ps-3" style={{ minWidth: "90px", textAlign: "right", fontSize: "1rem" }}>
+                            ₹{(item.qty * item.price).toLocaleString()}
                           </p>
                         </div>
                       </div>
-
-                      <hr className="my-4" />
                     </div>
                   ))}
                 </div>
@@ -103,32 +98,30 @@ const Cart = () => {
             </div>
 
             {/* Order Summary */}
-            <div className="col-md-4">
-              <div className="card mb-4">
-                <div className="card-header py-3 bg-light">
-                  <h5 className="mb-0">Order Summary</h5>
+            <div className="col-lg-4 col-md-8 col-12 mb-4">
+              <div className="card rounded-theme shadow-theme">
+                <div className="card-header py-3 bg-light border-theme-light">
+                  <h5 className="mb-0 text-theme-dark">Order Summary</h5>
                 </div>
-                <div className="card-body">
-                  <ul className="list-group list-group-flush">
-                    <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+                <div className="card-body p-3">
+                  <ul className="list-group list-group-flush mb-3">
+                    <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0 text-theme-dark">
                       Products ({totalItems})
                       <span>₹{Math.round(subtotal).toLocaleString()}</span>
                     </li>
-                    <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <li className="list-group-item d-flex justify-content-between align-items-center px-0 text-theme-dark">
                       Shipping
-                      <span>₹{shipping}</span>
+                      <span>₹{shipping.toLocaleString()}</span>
                     </li>
-                    <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-3">
+                    <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-0 text-theme-dark">
                       <strong>Total amount</strong>
                       <span>
-                        <strong>
-                          ₹{Math.round(subtotal + shipping).toLocaleString()}
-                        </strong>
+                        <strong>₹{Math.round(subtotal + shipping).toLocaleString()}</strong>
                       </span>
                     </li>
                   </ul>
 
-                  <Link to="/checkout" className="btn btn-dark btn-lg btn-block">
+                  <Link to="/checkout" className="btn-themed btn-lg w-100 text-center">
                     Go to checkout
                   </Link>
                 </div>
@@ -144,11 +137,126 @@ const Cart = () => {
     <>
       <Navbar />
       <div className="container my-3 py-3">
-        <h1 className="text-center">Cart</h1>
-        <hr />
+        <h1 className="text-center text-theme-dark">Cart</h1>
+        <hr className="border-theme-light" />
         {state.length > 0 ? <ShowCart /> : <EmptyCart />}
       </div>
       <Footer />
+
+      <style>{`
+        :root {
+          --brown-dark: #7a563a;
+          --brown-darker: #68492f;
+          --brown-light: #f1e6d4;
+          --cream-bg: #fffaf4;
+          --text-dark: #5b3b25;
+          --text-medium: #7a563a;
+          --text-muted: #777;
+        }
+        body, html, .container {
+          background-color: var(--cream-bg);
+        }
+        .text-theme-dark {
+          color: var(--text-dark);
+        }
+        .text-theme-muted {
+          color: var(--text-muted);
+        }
+        .bg-light {
+          background-color: var(--cream-bg) !important;
+        }
+        .border-theme-light {
+          border-color: var(--brown-light) !important;
+        }
+        .btn-themed {
+          background-color: var(--brown-dark);
+          color: #fff !important;
+          border-radius: 25px;
+          font-weight: 600;
+          padding: 12px 20px;
+          border: none;
+          display: inline-block;
+          text-align: center;
+          transition: background-color 0.3s ease;
+          cursor: pointer;
+          user-select: none;
+          box-shadow: 0 2px 6px rgba(122, 86, 58, 0.18);
+          width: 100%;
+        }
+        .btn-themed:hover,
+        .btn-themed:focus {
+          background-color: var(--brown-darker);
+          text-decoration: none;
+          outline: none;
+          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
+        }
+        .btn-themed-outline {
+          background-color: transparent;
+          color: var(--brown-dark) !important;
+          border: 1.5px solid var(--brown-dark);
+          border-radius: 25px;
+          font-weight: 600;
+          padding: 5px 10px;
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.3s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 30px;
+          height: 32px;
+        }
+        .btn-themed-outline:hover,
+        .btn-themed-outline:focus {
+          background-color: var(--brown-dark);
+          color: #fff !important;
+          border-color: var(--brown-dark);
+          outline: none;
+          box-shadow: 0 0 8px rgba(122, 86, 58, 0.6);
+          text-decoration: none;
+        }
+        .rounded-theme {
+          border-radius: 12px !important;
+        }
+        .shadow-theme {
+          box-shadow: 0 5px 14px rgba(122, 86, 58, 0.15) !important;
+        }
+        .gradient-custom-themed {
+          background: var(--cream-bg);
+        }
+        .input-group-text.qty-display {
+          background: var(--cream-bg);
+          color: var(--text-dark);
+          font-weight: 600;
+          min-width: 35px;
+          text-align: center;
+          border: 1.5px solid var(--brown-light);
+          border-radius: 0 0.4rem 0.4rem 0;
+          padding: 0.35rem 0.5rem;
+        }
+        @media (max-width: 768px) {
+          .card-body > div {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .input-group.input-group-sm.quantity-controls {
+            max-width: 100% !important;
+            width: 100%;
+            margin-top: 10px;
+          }
+          .qty-display {
+            min-width: 45px !important;
+          }
+          .btn-themed-outline {
+            min-width: 35px;
+            height: 35px;
+          }
+          .btn-themed {
+            padding: 10px;
+            font-size: 1rem;
+          }
+        }
+      `}</style>
     </>
   );
 };

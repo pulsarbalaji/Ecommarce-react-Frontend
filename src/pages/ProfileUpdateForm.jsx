@@ -7,22 +7,20 @@ const ProfileUpdateForm = () => {
   const [formData, setFormData] = useState({
     full_name: "",
     address: "",
-    date_of_birth: "",
+    dob: "",
     gender: "",
     profile_image: null,
   });
   const [preview, setPreview] = useState(null);
 
-  // Fetch profile
   useEffect(() => {
     if (user?.customer_details?.id) {
       api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
         const data = res.data;
-
         setFormData({
           full_name: data.data.full_name || user.customer_details.full_name || "",
           address: data.data.address || user.customer_details.address || "",
-          date_of_birth: data.data.dob || user.customer_details.dob || "",
+          dob: data.data.dob || user.customer_details.dob || "",
           gender: data.data.gender || user.customer_details.gender || "",
           profile_image: null,
         });
@@ -30,7 +28,7 @@ const ProfileUpdateForm = () => {
         if (data.data.profile_image) {
           const imgUrl = data.data.profile_image.startsWith("http")
             ? data.data.profile_image
-            : `http://127.0.0.1:8000${data.data.profile_image}`;
+            : `${process.env.REACT_APP_API_URL}${data.data.profile_image}`;
           setPreview(imgUrl);
         } else if (user.login_method === "google" && user.customer_details.profile_image) {
           setPreview(user.customer_details.profile_image);
@@ -75,12 +73,11 @@ const ProfileUpdateForm = () => {
     }
   };
 
-  // Reset form on close
   const resetForm = () => {
     setFormData({
       full_name: "",
       address: "",
-      date_of_birth: "",
+      dob: "",
       gender: "",
       profile_image: null,
     });
@@ -96,9 +93,11 @@ const ProfileUpdateForm = () => {
     >
       <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="profile-form">
             <div className="modal-header">
-              <h5 className="modal-title">Update Profile</h5>
+              <h5 className="modal-title" style={{ color: "#7a563a", fontWeight: "700" }}>
+                Update Profile
+              </h5>
               <button
                 type="button"
                 className="btn-close"
@@ -115,7 +114,7 @@ const ProfileUpdateForm = () => {
                   <div className="form-floating">
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control themed-input"
                       id="fullName"
                       name="full_name"
                       value={formData.full_name}
@@ -131,7 +130,7 @@ const ProfileUpdateForm = () => {
                   <div className="form-floating">
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control themed-input"
                       id="address"
                       name="address"
                       value={formData.address}
@@ -147,10 +146,10 @@ const ProfileUpdateForm = () => {
                   <div className="form-floating">
                     <input
                       type="date"
-                      className="form-control"
+                      className="form-control themed-input"
                       id="dob"
-                      name="date_of_birth"
-                      value={formData.date_of_birth}
+                      name="dob"
+                      value={formData.dob}
                       onChange={handleChange}
                       placeholder="Date of Birth"
                     />
@@ -162,7 +161,7 @@ const ProfileUpdateForm = () => {
                 <div className="col-md-6">
                   <div className="form-floating">
                     <select
-                      className="form-select"
+                      className="form-select themed-input"
                       id="gender"
                       name="gender"
                       value={formData.gender}
@@ -179,19 +178,32 @@ const ProfileUpdateForm = () => {
 
                 {/* Profile Photo */}
                 <div className="col-md-12">
-                  <label className="form-label">Profile Photo</label>
-                  <input
-                    type="file"
-                    className="form-control"
-                    name="profile_image"
-                    onChange={handleChange}
-                  />
+                  <label className="form-label" style={{ color: "#68492f", fontWeight: "600" }}>
+                    Profile Photo
+                  </label>
+
+                  {/* Show upload only if NOT google login */}
+                  {user?.login_method !== "google" ? (
+                    <input
+                      type="file"
+                      className="form-control themed-input"
+                      name="profile_image"
+                      onChange={handleChange}
+                    />
+                  ) : null}
+
                   {preview && (
                     <img
                       src={preview}
                       alt="preview"
                       className="mt-2 rounded"
-                      style={{ width: "120px", height: "120px", objectFit: "cover" }}
+                      style={{
+                        width: "120px",
+                        height: "120px",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                        border: "1px solid #f1e6d4",
+                      }}
                     />
                   )}
                 </div>
@@ -201,19 +213,60 @@ const ProfileUpdateForm = () => {
             <div className="modal-footer justify-content-center">
               <button
                 type="button"
-                className="btn btn-dark"
+                className="btn-themed"
                 data-bs-dismiss="modal"
                 onClick={resetForm}
               >
                 Close
               </button>
-              <button type="submit" className="btn btn-dark">
+              <button type="submit" className="btn-themed">
                 Update Profile
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      <style>{`
+        .themed-input {
+          border-radius: 10px;
+          border: 1px solid #f1e6d4;
+          background: #fffaf4;
+          color: #7a563a;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+          box-shadow: none;
+        }
+        .themed-input:focus {
+          border-color: #7a563a;
+          background: #fff;
+          outline: none;
+          box-shadow: 0 0 5px rgba(122, 86, 58, 0.4);
+        }
+        .profile-form .form-floating > label {
+          color: #68492f;
+          font-weight: 600;
+        }
+        .btn-themed {
+          background-color: #7a563a;
+          color: #fff;
+          border-radius: 25px;
+          border: none;
+          padding: 8px 26px;
+          font-weight: 500;
+          transition: background-color 0.3s ease;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(122, 86, 58, 0.12);
+        }
+        .btn-themed:hover {
+          background-color: #68492f;
+        }
+        .btn-themed:focus, .btn-themed:active {
+          background-color: #68492f;
+          outline: none;
+          box-shadow: 0 0 7px rgba(122, 86, 58, 0.5);
+        }
+      `}</style>
     </div>
   );
 };

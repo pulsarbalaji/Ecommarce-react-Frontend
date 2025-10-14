@@ -81,24 +81,21 @@ const Product = () => {
           </div>
         </div>
         <div className="col-md-6 py-3">
-          <h6 className="text-uppercase text-muted">
-            {product?.category_name}
-          </h6>
-          <h3 className="fw-bold">{product?.product_name}</h3>
-          <p className="lead">
-            Rating: {product?.average_rating}{" "}
-            <i className="fa fa-star text-warning"></i>
+          <h6 className="text-uppercase text-muted">{product?.category_name}</h6>
+          <h3 className="fw-bold" style={{ color: "#5b3b25" }}>{product?.product_name}</h3>
+          <p className="lead" style={{ color: "#7a563a" }}>
+            Rating: {product?.average_rating} <i className="fa fa-star text-warning"></i>
           </p>
           <h4 className="text-success my-2">₹{product?.price}</h4>
-          <p className="text-muted small">{product?.product_description}</p>
+          <p className="text-muted small" style={{ minHeight: "70px" }}>{product?.product_description}</p>
           <div className="d-flex flex-wrap">
             <button
-              className="btn btn-outline-dark me-2 mb-2"
+              className="btn-themed-outline me-2 mb-2"
               onClick={() => addProduct(product)}
             >
               Add to Cart
             </button>
-            <Link to="/cart" className="btn btn-dark mb-2">
+            <Link to="/cart" className="btn-themed mb-2">
               Go to Cart
             </Link>
           </div>
@@ -121,12 +118,14 @@ const Product = () => {
   // Show similar products (horizontal scroll)
   const ShowSimilarProducts = () => (
     <div className="my-5 container">
-      <h4 className="mb-3">You may also like</h4>
+      <h4 className="mb-3" style={{ color: "#7a563a", fontWeight: 600 }}>
+        You may also like
+      </h4>
       <div className="scroll-container">
         {similarProducts.map((item) => (
           <div
             key={item.id}
-            className="card text-center border-0 shadow-sm rounded product-card"
+            className="card text-center border-0 shadow-sm rounded product-card-theme"
           >
             <div className="p-2 bg-light rounded">
               <img
@@ -138,19 +137,19 @@ const Product = () => {
               />
             </div>
             <div className="card-body p-2">
-              <h6 className="card-title text-dark small">
+              <h6 className="card-title text-dark small text-truncate">
                 {item.product_name.substring(0, 18)}...
               </h6>
               <p className="text-success small">₹{item.price}</p>
               <div className="d-flex justify-content-center flex-wrap">
                 <Link
                   to={`/product/${item.id}`}
-                  className="btn btn-outline-dark btn-sm me-2 mb-2"
+                  className="btn-themed-outline btn-sm me-2 mb-2"
                 >
                   View
                 </Link>
                 <button
-                  className="btn btn-dark btn-sm mb-2"
+                  className="btn-themed btn-sm mb-2"
                   onClick={() => addProduct(item)}
                 >
                   +
@@ -178,25 +177,97 @@ const Product = () => {
           display: flex;
           overflow-x: auto;
           gap: 15px;
-          padding-bottom: 10px;
+          padding-bottom: 12px;
           scrollbar-width: thin;
+          scrollbar-color: #7a563a #f1e6d4;
         }
         .scroll-container::-webkit-scrollbar {
-          height: 6px;
+          height: 8px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+          background: #f1e6d4;
+          border-radius: 10px;
         }
         .scroll-container::-webkit-scrollbar-thumb {
-          background: #aaa;
-          border-radius: 4px;
+          background: #7a563a;
+          border-radius: 10px;
         }
-        .product-card {
+
+        /* Product card theme */
+        .product-card-theme {
           flex: 0 0 160px;
           transition: transform 0.2s ease;
+          background: #fff;
+          border-radius: 12px;
+          border: 1px solid #f1e6d4;
+          box-shadow: 0 2px 7px rgba(122, 86, 58, 0.1);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
         }
-        .product-card:hover {
+        .product-card-theme:hover {
           transform: scale(1.05);
+          box-shadow: 0 7px 18px rgba(122, 86, 58, 0.2);
         }
-        .skeleton-card {
-          flex: 0 0 160px;
+
+        /* Buttons themed */
+        .btn-themed {
+          background-color: #7a563a;
+          color: #fff !important;
+          border: none;
+          border-radius: 25px;
+          padding: 5px 15px;
+          font-weight: 600;
+          text-align: center;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          display: inline-block;
+          user-select: none;
+        }
+        .btn-themed:hover {
+          background-color: #68492f;
+          text-decoration: none;
+        }
+        .btn-themed:focus {
+          outline: none;
+          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
+        }
+        .btn-themed:active {
+          background-color: #5c3f26;
+        }
+
+        .btn-themed-outline {
+          background-color: transparent;
+          color: #7a563a !important;
+          border: 1.5px solid #7a563a;
+          border-radius: 25px;
+          padding: 4px 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: inline-block;
+          user-select: none;
+          text-align: center;
+        }
+        .btn-themed-outline:hover {
+          background-color: #7a563a;
+          color: #fff !important;
+          text-decoration: none;
+        }
+        .btn-themed-outline:focus {
+          outline: none;
+          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
+        }
+        .btn-themed-outline:active {
+          background-color: #68492f;
+          border-color: #68492f;
+        }
+
+        /* Truncate product name in small cards */
+        .text-truncate {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       `}</style>
     </>
