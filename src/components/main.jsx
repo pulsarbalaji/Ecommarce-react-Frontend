@@ -17,6 +17,13 @@ const images = [
     description:
       "Grab limited-time deals on your favorite products today!",
   },
+  {
+    src: "./assets/third-image.jpg",
+    alt: "Exclusive Offers",
+    title: "Exclusive Offers",
+    description:
+      "Grab limited-time deals on your favorite products today!",
+  },
 ];
 
 const Home = () => {
