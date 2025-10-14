@@ -48,9 +48,9 @@ const Navbar = () => {
 
   const getProfileImage = (user) => {
     const cd = user.customer_details;
-    if (!cd) return "/default-profile.png";
+    if (!cd) return "../assets/Profile-image.jpg";
     let img = cd.profile_image;
-    if (!img) return "/default-profile.png";
+    if (!img) return "../assets/Profile-image.jpg";
     if (user.login_method === "google") {
       if (img.includes("%3A") || img.includes("%2F")) {
         let decoded = decodeURIComponent(img.replace("/media/", ""));

@@ -159,9 +159,9 @@ const Products = () => {
         >
           ‹ Prev
         </button>
-        <span className="page-indicator">
+        {/* <span className="page-indicator">
           Page {page} of {totalPages}
-        </span>
+        </span> */}
         <button
           className="btn-nav"
           disabled={page === totalPages}

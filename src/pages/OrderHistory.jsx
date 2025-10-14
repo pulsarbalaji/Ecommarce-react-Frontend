@@ -96,9 +96,9 @@ const OrderHistory = () => {
         >
           Prev
         </button>
-        <span className="btn btn-light m-1 disabled text-theme-dark">
+        {/* <span className="btn btn-light m-1 disabled text-theme-dark">
           Page {page} of {totalPages}
-        </span>
+        </span> */}
         <button
           className="btn-nav"
           disabled={page === totalPages}
