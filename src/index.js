@@ -30,6 +30,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileUpdateForm from "./pages/ProfileUpdateForm";
 import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
+import WhatsAppWidget from "./pages/WhatsAppWidget";
+import InstagramWidget from "./pages/Instagramwidget";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -37,6 +39,8 @@ root.render(
     <GoogleOAuthProvider clientId="894528088345-4e1pbin29dladn3uafe44450espqu0lk.apps.googleusercontent.com">
       <AuthProvider>
         <ScrollToTop>
+          <WhatsAppWidget />
+          <InstagramWidget />
           <Provider store={store}>
             <Routes>
               <Route path="/" element={<Home />} />
