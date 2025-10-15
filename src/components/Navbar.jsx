@@ -299,6 +299,7 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+        
       </nav>
 
       {user && <ProfileUpdateForm />}

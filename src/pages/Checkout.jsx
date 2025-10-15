@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/base_url";
 import { clearCart } from "../redux/reducer/handleCart";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const Checkout = () => {
   const cartItems = useSelector((state) => state.handleCart);
@@ -46,7 +47,13 @@ const Checkout = () => {
   };
 
   const { subtotal, shipping, totalAmount, totalItems } = useMemo(() => {
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+    const subtotal = cartItems.reduce((acc, item) => {
+      const priceToUse =
+        item.offer_price && Number(item.offer_price) > 0
+          ? Number(item.offer_price)
+          : Number(item.price);
+      return acc + priceToUse * item.qty;
+    }, 0);
     const shipping = 30;
     const totalAmount = subtotal + shipping;
     const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
@@ -56,17 +63,25 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!cartItems.length) {
-      alert("Cart is empty!");
+      toast.error("Cart is empty!");
       return;
     }
 
     try {
-      const itemsPayload = cartItems.map((item) => ({
-        product: item.id,
-        quantity: item.qty,
-        price: item.price,
-        total: item.price * item.qty,
-      }));
+      const itemsPayload = cartItems.map((item) => {
+        const priceToUse =
+          item.offer_price && Number(item.offer_price) > 0
+            ? Number(item.offer_price)
+            : Number(item.price);
+
+        return {
+          product: item.id,
+          quantity: item.qty,
+          price: priceToUse,
+          total: priceToUse * item.qty,
+        };
+      });
+
 
       const payload = {
         customer: user.customer_details.id,
@@ -104,7 +119,7 @@ const Checkout = () => {
               dispatch(clearCart());
               navigate(`/order-confirmation/${order.id}`);
             } catch (err) {
-              alert("Payment verification failed");
+              toast.error("Payment verification failed");
               console.error(err);
             }
           },
@@ -116,15 +131,24 @@ const Checkout = () => {
         };
 
         const rzp = new window.Razorpay(options);
+        rzp.on("payment.failed", function (response) {
+          toast.error("Payment failed or was cancelled. Please try again.");
+          console.error("Payment failed:", response.error);
+        });
+
+        rzp.on("modal.closed", function () {
+          toast("Payment window closed — order not completed.", { icon: "⚠️" });
+        });
+
         rzp.open();
       } else {
-        alert("Order placed with Cash on Delivery!");
+        toast.success("Order placed with Cash on Delivery!");
         dispatch(clearCart());
         navigate(`/order-confirmation/${order.id}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong!");
+      toast.error("Something went wrong!");
     }
   };
 

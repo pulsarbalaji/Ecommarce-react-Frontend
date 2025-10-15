@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 import { FaInstagram } from "react-icons/fa";
 
-// Change this to your Instagram profile
-const INSTA_USERNAME = "kaavya_balamurugan"; 
-
+// Instagram username (change to yours)
+const INSTA_USERNAME = "kaavya_balamurugan";
 const defaultMsg = "Hi, I found you via your online store!";
 
-const InstagramWidget = () => {
+const InstagramWidget = ({ inNavbar }) => {
   const [open, setOpen] = useState(false);
   const [userName, setUserName] = useState("");
   const [msg, setMsg] = useState(defaultMsg);
 
-  // Open Instagram DM or Profile
+  // Detect mobile
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 600;
+
+  // Open IG profile in a new tab
   const handleChatStart = () => {
-    // Instagram does not allow DM via web with a prefilled message, so we send to the inbox
-    // Alternatively, you can direct to a post or use Instagram's "Contact" link in bio.
     window.open(
       `https://instagram.com/${INSTA_USERNAME}`,
       "_blank"
@@ -24,14 +24,34 @@ const InstagramWidget = () => {
 
   return (
     <>
-      {/* Floating Instagram Button */}
-      <button
-        className="instagram-fab"
-        aria-label="Chat on Instagram"
-        onClick={() => setOpen(true)}
-      >
-        <FaInstagram size={36} />
-      </button>
+      {/* Floating Instagram FAB (hidden if inNavbar) */}
+      {!inNavbar && (
+        <button
+          className="instagram-fab"
+          aria-label="Open Instagram"
+          onClick={() => setOpen(true)}
+          style={{
+            width: isMobile ? 44 : 50,
+            height: isMobile ? 44 : 50,
+            right: isMobile ? 14 : 33,
+            bottom: isMobile ? 70 : 110, // above WhatsApp FAB
+          }}
+        >
+          <FaInstagram size={isMobile ? 23 : 29} />
+        </button>
+      )}
+
+      {/* Instagram in Navbar (mobile) */}
+      {inNavbar && (
+        <button
+          className="instagram-navbar"
+          aria-label="Open Instagram"
+          onClick={() => setOpen(true)}
+          style={{ background: "none", border: "none", padding: "0 6px", cursor: "pointer" }}
+        >
+          <FaInstagram size={22} style={{ color: "#e1306c" }} />
+        </button>
+      )}
 
       {/* Modal */}
       {open && (
@@ -42,7 +62,7 @@ const InstagramWidget = () => {
           />
           <div className="insta-modal">
             <div className="insta-modal-header">
-              <FaInstagram size={34} color="#e1306c" />
+              <FaInstagram size={28} color="#e1306c" />
               <span>Message us on Instagram</span>
               <button className="insta-modal-close" onClick={() => setOpen(false)}>
                 &times;
@@ -76,7 +96,7 @@ const InstagramWidget = () => {
                 Message us
               </button>
               <div className="insta-note">
-                (You will be redirected to Instagram DMs)
+                (You will be redirected to Instagram)
               </div>
             </div>
           </div>
@@ -100,11 +120,11 @@ const InstagramWidget = () => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: box-shadow 0.21s;
+          transition: box-shadow 0.21s, background 0.21s;
         }
         .instagram-fab:hover,
         .instagram-fab:focus {
-          opacity: 0.88;
+          opacity: 0.93;
           box-shadow: 0 8px 32px rgba(225, 48, 108, 0.27);
         }
         .insta-modal-backdrop {
@@ -136,10 +156,7 @@ const InstagramWidget = () => {
           font-size: 1.13rem;
           color: #1e1e1e;
         }
-        .insta-modal-header span {
-          margin-left: 8px;
-          flex: 1;
-        }
+        .insta-modal-header span { margin-left: 8px; flex: 1; }
         .insta-modal-close {
           background: none;
           border: none;
@@ -174,9 +191,7 @@ const InstagramWidget = () => {
           resize: none;
           margin-bottom: 2px;
         }
-        .insta-input:focus {
-          border-color: #e1306c;
-        }
+        .insta-input:focus { border-color: #e1306c; }
         .insta-chat-btn {
           margin-top: 10px;
           padding: 11px 0;
@@ -188,9 +203,7 @@ const InstagramWidget = () => {
           font-size: 1.08rem;
           cursor: pointer;
         }
-        .insta-chat-btn:hover {
-          opacity: 0.88;
-        }
+        .insta-chat-btn:hover { opacity: 0.9; }
         .insta-note {
           margin-top: 11px;
           color: #999;
@@ -198,7 +211,10 @@ const InstagramWidget = () => {
           text-align: center;
         }
         @media (max-width: 600px) {
-          .insta-modal { max-width: 95vw; }
+          .instagram-fab {
+            width: 44px; height: 44px; right: 14px; bottom: 70px;
+          }
+          .insta-modal { max-width: 96vw; }
         }
       `}</style>
     </>

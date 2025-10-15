@@ -32,7 +32,12 @@ const Cart = () => {
     let totalItems = 0;
 
     state.forEach((item) => {
-      subtotal += item.price * item.qty;
+      // Use offer price if available and valid else normal price
+      const priceToUse =
+        item.offer_price && Number(item.offer_price) > 0
+          ? Number(item.offer_price)
+          : Number(item.price);
+      subtotal += priceToUse * item.qty;
       totalItems += item.qty;
     });
 
@@ -47,52 +52,90 @@ const Cart = () => {
                   <h5 className="mb-0 text-theme-dark">Item List</h5>
                 </div>
                 <div className="card-body p-3">
-                  {state.map((item) => (
-                    <div key={item.id} className="mb-3 pb-3 border-bottom border-theme-light">
-                      <div className="row align-items-center g-2">
-                        <div className="col-4 col-sm-3 text-center">
-                          <img
-                            src={`http://127.0.0.1:8000${item.product_image}`}
-                            alt={item.product_name}
-                            className="rounded-theme img-fluid"
-                            style={{ maxHeight: "90px", objectFit: "contain" }}
-                          />
-                        </div>
+                  {state.map((item) => {
+                    // Calculate price to show per item
+                    const priceToUse =
+                      item.offer_price && Number(item.offer_price) > 0
+                        ? Number(item.offer_price)
+                        : Number(item.price);
+                    const originalPrice =
+                      item.offer_price && Number(item.offer_price) > 0
+                        ? Number(item.price)
+                        : null;
 
-                        <div className="col-8 col-sm-5">
-                          <p className="text-theme-dark fw-semibold mb-1" style={{ fontSize: "1rem" }}>
-                            {item.product_name}
-                          </p>
-                          <p className="text-theme-muted mb-1" style={{ fontSize: "0.9rem" }}>
-                            ₹{Number(item.price).toLocaleString()} each
-                          </p>
-                        </div>
-
-                        <div className="col-12 col-sm-4 d-flex align-items-center justify-content-between justify-content-sm-end gap-2">
-                          <div className="input-group input-group-sm quantity-controls" style={{ maxWidth: "120px" }}>
-                            <button
-                              className="btn btn-themed-outline"
-                              onClick={() => removeItem(item)}
-                              aria-label={`Remove one ${item.product_name}`}
-                            >
-                              <i className="fas fa-minus"></i>
-                            </button>
-                            <span className="input-group-text qty-display">{item.qty}</span>
-                            <button
-                              className="btn btn-themed-outline"
-                              onClick={() => addItem(item)}
-                              aria-label={`Add one ${item.product_name}`}
-                            >
-                              <i className="fas fa-plus"></i>
-                            </button>
+                    return (
+                      <div
+                        key={item.id}
+                        className="mb-3 pb-3 border-bottom border-theme-light"
+                      >
+                        <div className="row align-items-center g-2">
+                          <div className="col-4 col-sm-3 text-center">
+                            <img
+                              src={`http://127.0.0.1:8000${item.product_image}`}
+                              alt={item.product_name}
+                              className="rounded-theme img-fluid"
+                              style={{ maxHeight: "90px", objectFit: "contain" }}
+                            />
                           </div>
-                          <p className="text-theme-dark fw-bold mb-0 ps-3" style={{ minWidth: "90px", textAlign: "right", fontSize: "1rem" }}>
-                            ₹{(item.qty * item.price).toLocaleString()}
-                          </p>
+
+                          <div className="col-8 col-sm-5">
+                            <p
+                              className="text-theme-dark fw-semibold mb-1"
+                              style={{ fontSize: "1rem" }}
+                            >
+                              {item.product_name}
+                            </p>
+                            <p
+                              className="text-theme-muted mb-1"
+                              style={{ fontSize: "0.9rem" }}
+                            >
+                              ₹ {priceToUse.toLocaleString()} each{" "}
+                              {originalPrice && (
+                                <span style={{ fontSize: "0.8rem", textDecoration: "line-through", color: "#a0a0a0", marginLeft: "6px" }}>
+                                  ₹ {originalPrice.toLocaleString()}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="col-12 col-sm-4 d-flex align-items-center justify-content-between justify-content-sm-end gap-2">
+                            <div
+                              className="input-group input-group-sm quantity-controls"
+                              style={{ maxWidth: "120px" }}
+                            >
+                              <button
+                                className="btn btn-themed-outline"
+                                onClick={() => removeItem(item)}
+                                aria-label={`Remove one ${item.product_name}`}
+                              >
+                                <i className="fas fa-minus"></i>
+                              </button>
+                              <span className="input-group-text qty-display">
+                                {item.qty}
+                              </span>
+                              <button
+                                className="btn btn-themed-outline"
+                                onClick={() => addItem(item)}
+                                aria-label={`Add one ${item.product_name}`}
+                              >
+                                <i className="fas fa-plus"></i>
+                              </button>
+                            </div>
+                            <p
+                              className="text-theme-dark fw-bold mb-0 ps-3"
+                              style={{
+                                minWidth: "90px",
+                                textAlign: "right",
+                                fontSize: "1rem",
+                              }}
+                            >
+                              ₹ {(priceToUse * item.qty).toLocaleString()}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -143,6 +186,7 @@ const Cart = () => {
       </div>
       <Footer />
 
+      {/* CSS Styles: */}
       <style>{`
         :root {
           --brown-dark: #7a563a;
@@ -156,22 +200,15 @@ const Cart = () => {
         body, html, .container {
           background-color: var(--cream-bg);
         }
-        .text-theme-dark {
-          color: var(--text-dark);
-        }
-        .text-theme-muted {
-          color: var(--text-muted);
-        }
-        .bg-light {
-          background-color: var(--cream-bg) !important;
-        }
-        .border-theme-light {
-          border-color: var(--brown-light) !important;
-        }
+        .text-theme-dark { color: var(--text-dark); }
+        .text-theme-muted { color: var(--text-muted); }
+        .bg-light { background-color: var(--cream-bg) !important; }
+        .border-theme-light { border-color: var(--brown-light) !important; }
         .btn-themed {
           background-color: var(--brown-dark);
           color: #fff !important;
           border-radius: 25px;
+          text-decoration: none;
           font-weight: 600;
           padding: 12px 20px;
           border: none;
@@ -183,8 +220,7 @@ const Cart = () => {
           box-shadow: 0 2px 6px rgba(122, 86, 58, 0.18);
           width: 100%;
         }
-        .btn-themed:hover,
-        .btn-themed:focus {
+        .btn-themed:hover, .btn-themed:focus {
           background-color: var(--brown-darker);
           text-decoration: none;
           outline: none;
@@ -206,8 +242,7 @@ const Cart = () => {
           min-width: 30px;
           height: 32px;
         }
-        .btn-themed-outline:hover,
-        .btn-themed-outline:focus {
+        .btn-themed-outline:hover, .btn-themed-outline:focus {
           background-color: var(--brown-dark);
           color: #fff !important;
           border-color: var(--brown-dark);
@@ -215,15 +250,9 @@ const Cart = () => {
           box-shadow: 0 0 8px rgba(122, 86, 58, 0.6);
           text-decoration: none;
         }
-        .rounded-theme {
-          border-radius: 12px !important;
-        }
-        .shadow-theme {
-          box-shadow: 0 5px 14px rgba(122, 86, 58, 0.15) !important;
-        }
-        .gradient-custom-themed {
-          background: var(--cream-bg);
-        }
+        .rounded-theme { border-radius: 12px !important; }
+        .shadow-theme { box-shadow: 0 5px 14px rgba(122, 86, 58, 0.15) !important; }
+        .gradient-custom-themed { background: var(--cream-bg); }
         .input-group-text.qty-display {
           background: var(--cream-bg);
           color: var(--text-dark);
@@ -244,17 +273,9 @@ const Cart = () => {
             width: 100%;
             margin-top: 10px;
           }
-          .qty-display {
-            min-width: 45px !important;
-          }
-          .btn-themed-outline {
-            min-width: 35px;
-            height: 35px;
-          }
-          .btn-themed {
-            padding: 10px;
-            font-size: 1rem;
-          }
+          .qty-display { min-width: 45px !important; }
+          .btn-themed-outline { min-width: 35px; height: 35px; }
+          .btn-themed { padding: 10px; font-size: 1rem; }
         }
       `}</style>
     </>

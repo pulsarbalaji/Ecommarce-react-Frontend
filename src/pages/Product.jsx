@@ -6,6 +6,7 @@ import { addCart } from "../redux/action";
 
 import { Footer, Navbar } from "../components";
 import api from "../utils/base_url";
+import toast from "react-hot-toast";
 
 const Product = () => {
   const { id } = useParams();
@@ -15,7 +16,11 @@ const Product = () => {
   const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const dispatch = useDispatch();
-  const addProduct = (product) => dispatch(addCart(product));
+  const addProduct = (product) => {
+  dispatch(addCart(product));
+  toast.success("Added to cart"); // ✅ show toast
+};
+
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -29,9 +34,7 @@ const Product = () => {
         setLoading(false);
 
         if (data?.category) {
-          const resSimilar = await api.get(
-            `/productfilter/${data.category}/?page=1`
-          );
+          const resSimilar = await api.get(`/productfilter/${data.category}/?page=1`);
           const dataSimilar = resSimilar.data?.data || [];
           setSimilarProducts(dataSimilar.filter((item) => item.id !== data.id));
         }
@@ -46,7 +49,6 @@ const Product = () => {
     fetchProduct();
   }, [id]);
 
-  // Skeleton loader for main product
   const LoadingProduct = () => (
     <div className="container my-5 py-2">
       <div className="row">
@@ -66,45 +68,66 @@ const Product = () => {
     </div>
   );
 
-  // Show main product
-  const ShowProduct = () => (
-    <div className="container my-5 py-2">
-      <div className="row align-items-center">
-        <div className="col-md-6 col-sm-12 py-3 text-center">
-          <div className="product-image-wrapper shadow-sm rounded bg-light p-3">
-            <img
-              className="img-fluid"
-              src={`${process.env.REACT_APP_API_URL}${product?.product_image}`}
-              alt={product?.product_name}
-              style={{ objectFit: "contain", maxHeight: "350px" }}
-            />
+  const ShowProduct = () => {
+    if (!product) return null;
+
+    const hasOffer =
+      product.offer_price !== null &&
+      product.offer_price > 0 &&
+      product.offer_price !== product.price;
+
+    return (
+      <div className="container my-5 py-2">
+        <div className="row align-items-center">
+          <div className="col-md-6 col-sm-12 py-3 text-center">
+            <div className="product-image-wrapper shadow-sm rounded bg-light p-3">
+              <img
+                className="img-fluid"
+                src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
+                alt={product.product_name}
+                style={{ objectFit: "contain", maxHeight: "350px" }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="col-md-6 py-3">
-          <h6 className="text-uppercase text-muted">{product?.category_name}</h6>
-          <h3 className="fw-bold" style={{ color: "#5b3b25" }}>{product?.product_name}</h3>
-          <p className="lead" style={{ color: "#7a563a" }}>
-            Rating: {product?.average_rating} <i className="fa fa-star text-warning"></i>
-          </p>
-          <h4 className="text-success my-2">₹{product?.price}</h4>
-          <p className="text-muted small" style={{ minHeight: "70px" }}>{product?.product_description}</p>
-          <div className="d-flex flex-wrap">
-            <button
-              className="btn-themed-outline me-2 mb-2"
-              onClick={() => addProduct(product)}
-            >
-              Add to Cart
-            </button>
-            <Link to="/cart" className="btn-themed mb-2">
-              Go to Cart
-            </Link>
+          <div className="col-md-6 py-3">
+            <h6 className="text-uppercase text-muted">{product.category_name}</h6>
+            <h3 className="fw-bold" style={{ color: "#5b3b25" }}>
+              {product.product_name}
+            </h3>
+            <p className="lead" style={{ color: "#7a563a" }}>
+              Rating: {product.average_rating} <i className="fa fa-star text-warning"></i>
+            </p>
+
+            <h4 className="text-success my-2">
+              {hasOffer ? (
+                <>
+                  ₹{parseFloat(product.offer_price).toLocaleString()}{" "}
+                  <small style={{ color: "#dc3545", textDecoration: "line-through", fontWeight: "normal" }}>
+                    ₹{parseFloat(product.price).toLocaleString()}
+                  </small>
+                </>
+              ) : (
+                `₹${parseFloat(product.price).toLocaleString()}`
+              )}
+            </h4>
+
+            <p className="text-muted small" style={{ minHeight: "70px" }}>
+              {product.product_description}
+            </p>
+            <div className="d-flex flex-wrap">
+              <button className="btn-themed-outline me-2 mb-2" onClick={() => addProduct(product)}>
+                Add to Cart
+              </button>
+              <Link to="/cart" className="btn-themed mb-2">
+                Go to Cart
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // Skeleton loader for similar products
   const LoadingSimilar = () => (
     <div className="scroll-container my-4 py-3">
       {[...Array(5)].map((_, idx) => (
@@ -115,49 +138,62 @@ const Product = () => {
     </div>
   );
 
-  // Show similar products (horizontal scroll)
   const ShowSimilarProducts = () => (
     <div className="my-5 container">
       <h4 className="mb-3" style={{ color: "#7a563a", fontWeight: 600 }}>
         You may also like
       </h4>
       <div className="scroll-container">
-        {similarProducts.map((item) => (
-          <div
-            key={item.id}
-            className="card text-center border-0 shadow-sm rounded product-card-theme"
-          >
-            <div className="p-2 bg-light rounded">
-              <img
-                className="card-img-top"
-                src={`${process.env.REACT_APP_API_URL}${item.product_image}`}
-                alt={item.product_name}
-                height={120}
-                style={{ objectFit: "contain" }}
-              />
-            </div>
-            <div className="card-body p-2">
-              <h6 className="card-title text-dark small text-truncate">
-                {item.product_name.substring(0, 18)}...
-              </h6>
-              <p className="text-success small">₹{item.price}</p>
-              <div className="d-flex justify-content-center flex-wrap">
-                <Link
-                  to={`/product/${item.id}`}
-                  className="btn-themed-outline btn-sm me-2 mb-2"
-                >
-                  View
-                </Link>
-                <button
-                  className="btn-themed btn-sm mb-2"
-                  onClick={() => addProduct(item)}
-                >
-                  +
-                </button>
+        {similarProducts.map((item) => {
+          const hasOffer = item.offer_price !== null && Number(item.offer_price) > 0 && item.offer_price !== item.price;
+          return (
+            <div
+              key={item.id}
+              className="card text-center border-0 shadow-sm rounded product-card-theme"
+              style={{ position: "relative" }}
+            >
+              {hasOffer && (
+                <div className="offer-ribbon">
+                  {Math.round(item.offer_percentage)}% OFF
+                </div>
+              )}
+              <div className="p-2 bg-light rounded">
+                <img
+                  className="card-img-top"
+                  src={`${process.env.REACT_APP_API_URL}${item.product_image}`}
+                  alt={item.product_name}
+                  height={120}
+                  style={{ objectFit: "contain" }}
+                />
+              </div>
+              <div className="card-body p-2">
+                <h6 className="card-title text-dark small text-truncate">
+                  {item.product_name.length > 18 ? item.product_name.substring(0, 18) + "..." : item.product_name}
+                </h6>
+                <p className="text-success small">
+                  {hasOffer ? (
+                    <>
+                      ₹{parseFloat(item.offer_price).toLocaleString()}{" "}
+                      <small style={{ color: "#dc3545", textDecoration: "line-through", fontWeight: "normal", marginLeft: "6px" }}>
+                        ₹{parseFloat(item.price).toLocaleString()}
+                      </small>
+                    </>
+                  ) : (
+                    `₹${parseFloat(item.price).toLocaleString()}`
+                  )}
+                </p>
+                <div className="d-flex justify-content-center flex-wrap">
+                  <Link to={`/product/${item.id}`} className="btn-themed-outline btn-sm me-2 mb-2">
+                    View
+                  </Link>
+                  <button className="btn-themed btn-sm mb-2" onClick={() => addProduct(item)}>
+                    +
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -172,7 +208,6 @@ const Product = () => {
       <Footer />
 
       <style>{`
-        /* Horizontal scroll container */
         .scroll-container {
           display: flex;
           overflow-x: auto;
@@ -192,8 +227,6 @@ const Product = () => {
           background: #7a563a;
           border-radius: 10px;
         }
-
-        /* Product card theme */
         .product-card-theme {
           flex: 0 0 160px;
           transition: transform 0.2s ease;
@@ -204,13 +237,30 @@ const Product = () => {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          position: relative;
         }
         .product-card-theme:hover {
           transform: scale(1.05);
           box-shadow: 0 7px 18px rgba(122, 86, 58, 0.2);
         }
+.offer-ribbon {
+  position: absolute;
+  top: 10px;
+  right: 0px;
+  background: linear-gradient(135deg, #ff4b2b, #ff416c);
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  z-index: 5;
+}
 
-        /* Buttons themed */
+
+
+
+        /* Buttons */
         .btn-themed {
           background-color: #7a563a;
           color: #fff !important;
@@ -227,13 +277,6 @@ const Product = () => {
         .btn-themed:hover {
           background-color: #68492f;
           text-decoration: none;
-        }
-        .btn-themed:focus {
-          outline: none;
-          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
-        }
-        .btn-themed:active {
-          background-color: #5c3f26;
         }
 
         .btn-themed-outline {
@@ -254,16 +297,6 @@ const Product = () => {
           color: #fff !important;
           text-decoration: none;
         }
-        .btn-themed-outline:focus {
-          outline: none;
-          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
-        }
-        .btn-themed-outline:active {
-          background-color: #68492f;
-          border-color: #68492f;
-        }
-
-        /* Truncate product name in small cards */
         .text-truncate {
           white-space: nowrap;
           overflow: hidden;
