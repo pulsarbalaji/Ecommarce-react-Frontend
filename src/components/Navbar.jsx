@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import ProfileUpdateForm from "../pages/ProfileUpdateForm";
 import api from "../utils/base_url";
 import { AuthContext } from "../context/AuthContext";
+import WhatsAppWidget from "../pages/WhatsAppWidget";
+import InstagramWidget from "../pages/Instagramwidget";
 
 const Navbar = () => {
   const state = useSelector((state) => state.handleCart);
@@ -87,6 +89,10 @@ const Navbar = () => {
           >
             <span style={{ color: "#7a563a" }}>The</span> Parambariyam
           </NavLink>
+
+          <WhatsAppWidget inNavbar={true} />
+          <InstagramWidget inNavbar={true} />
+
 
           {/* Mobile Toggle */}
           <button

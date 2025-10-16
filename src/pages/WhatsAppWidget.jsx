@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaWhatsapp } from "react-icons/fa";
 
 const WHATSAPP_NUMBER = "919842782259";
@@ -8,60 +8,58 @@ const WhatsAppWidget = ({ inNavbar }) => {
   const [open, setOpen] = useState(false);
   const [userNumber, setUserNumber] = useState("");
   const [msg, setMsg] = useState(defaultMsg);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 600;
+  // Detect mobile device dynamically
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
-  // Open WhatsApp with prefilled message
+  // Open WhatsApp chat
   const handleChatStart = () => {
     const trimmedNumber = userNumber.replace(/\s+/g, "");
     const queryMsg = encodeURIComponent(msg + (trimmedNumber ? ` (${trimmedNumber})` : ""));
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${queryMsg}`,
-      "_blank"
-    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${queryMsg}`, "_blank");
     setOpen(false);
   };
 
   return (
     <>
-      {!inNavbar && (
+      {/* --- Desktop Floating Button --- */}
+      {!inNavbar && !isMobile && (
         <button
           className="whatsapp-fab"
           aria-label="Chat on WhatsApp"
           onClick={() => setOpen(true)}
-          style={{
-            width: isMobile ? 44 : 50,
-            height: isMobile ? 44 : 50,
-            right: isMobile ? 14 : 33,
-            bottom: isMobile ? 14 : 38,
-          }}
         >
-          <FaWhatsapp size={isMobile ? 22 : 27} />
+          <FaWhatsapp size={27} />
         </button>
       )}
 
-      {/* If you want to render inside navbar, use inNavbar prop and drop the WhatsApp icon wherever you want like: */}
-      {inNavbar && (
+      {/* --- Mobile Navbar Icon --- */}
+      {inNavbar && isMobile && (
         <button
           className="whatsapp-navbar"
           aria-label="Chat on WhatsApp"
           onClick={() => setOpen(true)}
           style={{
-            background: "none", border: "none", padding: "0 5px", cursor: "pointer"
+            background: "none",
+            border: "none",
+            padding: "0 6px",
+            cursor: "pointer",
           }}
         >
           <FaWhatsapp size={23} style={{ color: "#25d366" }} />
         </button>
       )}
 
-      {/* Modal */}
+      {/* --- Modal Popup --- */}
       {open && (
         <>
-          <div
-            className="wa-modal-backdrop"
-            onClick={() => setOpen(false)}
-          />
+          <div className="wa-modal-backdrop" onClick={() => setOpen(false)} />
           <div className="wa-modal">
             <div className="wa-modal-header">
               <FaWhatsapp size={28} color="#25d366" />
@@ -70,6 +68,7 @@ const WhatsAppWidget = ({ inNavbar }) => {
                 &times;
               </button>
             </div>
+
             <div className="wa-modal-body">
               <label htmlFor="wa-number" className="wa-label">
                 Enter your number
@@ -80,10 +79,11 @@ const WhatsAppWidget = ({ inNavbar }) => {
                 className="wa-input"
                 placeholder="Eg. 9876543210"
                 value={userNumber}
-                onChange={e => setUserNumber(e.target.value)}
+                onChange={(e) => setUserNumber(e.target.value)}
                 maxLength={15}
                 autoFocus
               />
+
               <label htmlFor="wa-msg" className="wa-label">
                 Message
               </label>
@@ -93,8 +93,9 @@ const WhatsAppWidget = ({ inNavbar }) => {
                 placeholder="Type your message"
                 rows={3}
                 value={msg}
-                onChange={e => setMsg(e.target.value)}
+                onChange={(e) => setMsg(e.target.value)}
               />
+
               <button className="wa-chat-btn" onClick={handleChatStart}>
                 Start a chat
               </button>
@@ -103,6 +104,7 @@ const WhatsAppWidget = ({ inNavbar }) => {
         </>
       )}
 
+      {/* --- Styling --- */}
       <style>{`
         .whatsapp-fab {
           position: fixed;
@@ -117,6 +119,7 @@ const WhatsAppWidget = ({ inNavbar }) => {
           display: flex; align-items: center; justify-content: center;
           cursor: pointer;
           transition: box-shadow 0.21s, background 0.23s;
+          width: 50px; height: 50px;
         }
         .whatsapp-fab:hover, .whatsapp-fab:focus {
           background: #128c7e;
@@ -179,12 +182,6 @@ const WhatsAppWidget = ({ inNavbar }) => {
         }
         .wa-chat-btn:hover, .wa-chat-btn:focus {
           background: #128c7e;
-        }
-        @media (max-width: 600px) {
-          .whatsapp-fab {
-            width: 44px; height: 44px; right: 14px; bottom: 14px;
-          }
-          .wa-modal { max-width: 96vw; }
         }
       `}</style>
     </>
