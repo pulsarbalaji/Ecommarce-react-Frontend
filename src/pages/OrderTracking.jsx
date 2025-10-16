@@ -53,12 +53,15 @@ const OrderTracking = () => {
             <h4 className="mb-0 text-theme-dark text-center">Order Tracking</h4>
           </div>
           <div className="card-body">
-            <h5 className="text-theme-dark">Order #{order.order_number}</h5>
+            <h5 className="text-theme-dark">Order Numver#{order.order_number}</h5>
             <p className="mb-1">
               <strong>Status:</strong>{" "}
               <span className={`badge ${order.status === "delivered" ? "bg-success" : "bg-warning text-dark"} text-uppercase`}>
                 {order.status}
               </span>
+            </p>
+            <p className="mb-1 text-theme-dark">
+              <strong>preferred Courier:</strong> {order.preferred_courier_service}
             </p>
             <p className="mb-1 text-theme-dark">
               <strong>Ordered At:</strong> {new Date(order.ordered_at).toLocaleString()}

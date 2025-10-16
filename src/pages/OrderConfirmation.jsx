@@ -67,6 +67,7 @@ const OrderConfirmation = () => {
                     <p><strong>Status:</strong> {order.status}</p>
                     <p><strong>Payment Method:</strong> {order.payment_method === "cod" ? "Cash on Delivery" : "Online Payment"}</p>
                     <p><strong>Payment Status:</strong> {order.payment_status}</p>
+                    <p><strong>preferred Courier:</strong> {order.preferred_courier_service}</p>
                   </div>
                   <div className="col-12 col-md-6">
                     <p><strong>Shipping Address:</strong> {order.shipping_address}</p>

@@ -21,11 +21,13 @@ const Checkout = () => {
     shippingAddress: "",
     sameAsBilling: false,
     paymentMethod: "cod",
+    preferredCourier: "",
   });
+
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
-
     if (name === "sameAsBilling") {
       setFormData((prev) => ({
         ...prev,
@@ -44,6 +46,9 @@ const Checkout = () => {
         [name]: value,
       }));
     }
+
+    // Clear error as user types
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const { subtotal, shipping, totalAmount, totalItems } = useMemo(() => {
@@ -60,8 +65,32 @@ const Checkout = () => {
     return { subtotal, shipping, totalAmount, totalItems };
   }, [cartItems]);
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required.";
+    else if (!/^[0-9]{10}$/.test(formData.phone))
+      newErrors.phone = "Enter a valid 10-digit phone number.";
+    if (!formData.billingAddress.trim())
+      newErrors.billingAddress = "Billing address is required.";
+    if (!formData.sameAsBilling && !formData.shippingAddress.trim())
+      newErrors.shippingAddress = "Shipping address is required.";
+    if (!formData.preferredCourier)
+      newErrors.preferredCourier = "Please select a courier.";
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = validateForm();
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fill all required fields correctly.");
+      return;
+    }
+
     if (!cartItems.length) {
       toast.error("Cart is empty!");
       return;
@@ -82,12 +111,12 @@ const Checkout = () => {
         };
       });
 
-
       const payload = {
         customer: user.customer_details.id,
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone,
+        preferred_courier_service: formData.preferredCourier,
         billing_address: formData.billingAddress,
         shipping_address: formData.shippingAddress,
         payment_method: formData.paymentMethod,
@@ -118,9 +147,8 @@ const Checkout = () => {
               });
               dispatch(clearCart());
               navigate(`/order-confirmation/${order.id}`);
-            } catch (err) {
+            } catch {
               toast.error("Payment verification failed");
-              console.error(err);
             }
           },
           prefill: {
@@ -131,23 +159,16 @@ const Checkout = () => {
         };
 
         const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", function (response) {
-          toast.error("Payment failed or was cancelled. Please try again.");
-          console.error("Payment failed:", response.error);
+        rzp.on("payment.failed", () => {
+          toast.error("Payment failed. Try again.");
         });
-
-        rzp.on("modal.closed", function () {
-          toast("Payment window closed — order not completed.", { icon: "⚠️" });
-        });
-
         rzp.open();
       } else {
-        toast.success("Order placed with Cash on Delivery!");
+        toast.success("Order placed successfully!");
         dispatch(clearCart());
         navigate(`/order-confirmation/${order.id}`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Something went wrong!");
     }
   };
@@ -155,7 +176,7 @@ const Checkout = () => {
   if (!cartItems.length) {
     return (
       <div className="container py-5 text-center">
-        <h4 style={{ color: "#5b3b25" }}>No items in Cart</h4>
+        <h4 className="text-theme-dark">No items in Cart</h4>
         <Link to="/" className="btn btn-outline-themed mt-3">
           Continue Shopping
         </Link>
@@ -167,109 +188,170 @@ const Checkout = () => {
     <>
       <Navbar />
       <div className="container py-5">
-        <div className="row my-4">
-          <div className="col-md-5 col-lg-4 order-md-last mb-4">
-            {/* Order Summary */}
-            <div className="card mb-4 rounded-theme shadow-theme">
-              <div className="card-header py-3 bg-light">
-                <h5 style={{ color: "#5b3b25" }}>Order Summary</h5>
+        <div className="row g-4">
+          {/* Order Summary */}
+          <div className="col-lg-4 col-md-5 order-md-last">
+            <div className="card shadow-theme rounded-theme">
+              <div className="card-header bg-light">
+                <h5 className="m-0 text-theme-dark">Order Summary</h5>
               </div>
               <div className="card-body">
                 <ul className="list-group list-group-flush">
-                  <li className="list-group-item d-flex justify-content-between" style={{ color: "#7a563a" }}>
-                    Products ({totalItems}) <span>₹{subtotal.toLocaleString()}</span>
+                  <li className="list-group-item d-flex justify-content-between">
+                    Products ({totalItems}) <strong>₹{subtotal}</strong>
                   </li>
-                  <li className="list-group-item d-flex justify-content-between" style={{ color: "#7a563a" }}>
-                    Shipping <span>₹{shipping}</span>
+                  <li className="list-group-item d-flex justify-content-between">
+                    Shipping <strong>₹{shipping}</strong>
                   </li>
-                  <li className="list-group-item d-flex justify-content-between" style={{ color: "#5b3b25", fontWeight: "bold" }}>
-                    Total <span>₹{totalAmount.toLocaleString()}</span>
+                  <li className="list-group-item d-flex justify-content-between text-theme-dark fw-bold">
+                    Total <strong>₹{totalAmount}</strong>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
 
-          <div className="col-md-7 col-lg-8 mb-4">
-            {/* Checkout Form */}
-            <div className="card mb-4 rounded-theme shadow-theme">
-              <div className="card-header py-3" style={{ color: "#5b3b25" }}>
-                <h4>Billing & Shipping</h4>
+          {/* Billing & Shipping Form */}
+          <div className="col-lg-8 col-md-7">
+            <div className="card shadow-theme rounded-theme">
+              <div className="card-header bg-light">
+                <h5 className="m-0 text-theme-dark">Billing & Shipping</h5>
               </div>
               <div className="card-body">
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="checkout-form">
                   <div className="row g-3">
-                    <div className="col-6">
+                    {/* First Name */}
+                    <div className="col-sm-6">
+                      <label className="form-label">First Name</label>
                       <input
                         type="text"
-                        className="form-control themed-input"
-                        placeholder="First Name"
                         name="firstName"
+                        className={`form-control themed-input ${
+                          errors.firstName ? "is-invalid" : ""
+                        }`}
                         value={formData.firstName}
                         onChange={handleChange}
-                        required
                       />
+                      {errors.firstName && (
+                        <div className="error-text">{errors.firstName}</div>
+                      )}
                     </div>
-                    <div className="col-6">
+
+                    {/* Last Name */}
+                    <div className="col-sm-6">
+                      <label className="form-label">Last Name</label>
                       <input
                         type="text"
-                        className="form-control themed-input"
-                        placeholder="Last Name"
                         name="lastName"
+                        className={`form-control themed-input ${
+                          errors.lastName ? "is-invalid" : ""
+                        }`}
                         value={formData.lastName}
                         onChange={handleChange}
-                        required
                       />
+                      {errors.lastName && (
+                        <div className="error-text">{errors.lastName}</div>
+                      )}
                     </div>
-                    <div className="col-12">
+
+                    {/* Phone */}
+                    <div className="col-sm-6">
+                      <label className="form-label">Phone</label>
                       <input
                         type="text"
-                        className="form-control themed-input"
-                        placeholder="Phone"
                         name="phone"
+                        className={`form-control themed-input ${
+                          errors.phone ? "is-invalid" : ""
+                        }`}
                         value={formData.phone}
                         onChange={handleChange}
-                        required
                       />
+                      {errors.phone && (
+                        <div className="error-text">{errors.phone}</div>
+                      )}
                     </div>
+
+                    {/* Preferred Courier */}
+                    <div className="col-sm-6">
+                      <label className="form-label">Preferred Courier</label>
+                      <select
+                        className={`form-select themed-select ${
+                          errors.preferredCourier ? "is-invalid" : ""
+                        }`}
+                        name="preferredCourier"
+                        value={formData.preferredCourier}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Courier</option>
+                        <option value="Professional courier">
+                          Professional Courier
+                        </option>
+                        <option value="ST courier">ST Courier</option>
+                        <option value="DTDC courier">DTDC Courier</option>
+                      </select>
+                      {errors.preferredCourier && (
+                        <div className="error-text">
+                          {errors.preferredCourier}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Billing Address */}
                     <div className="col-12">
+                      <label className="form-label">Billing Address</label>
                       <textarea
-                        className="form-control themed-input"
-                        placeholder="Billing Address"
                         name="billingAddress"
+                        rows="3"
+                        className={`form-control themed-input ${
+                          errors.billingAddress ? "is-invalid" : ""
+                        }`}
                         value={formData.billingAddress}
                         onChange={handleChange}
-                        required
-                        rows={3}
-                      />
+                      ></textarea>
+                      {errors.billingAddress && (
+                        <div className="error-text">{errors.billingAddress}</div>
+                      )}
                     </div>
+
+                    {/* Same as Billing */}
                     <div className="col-12 form-check my-2">
                       <input
-                        className="form-check-input themed-checkbox"
                         type="checkbox"
+                        className="form-check-input themed-checkbox"
                         name="sameAsBilling"
                         checked={formData.sameAsBilling}
                         onChange={handleChange}
                         id="sameAsBilling"
                       />
-                      <label className="form-check-label" htmlFor="sameAsBilling" style={{ color: "#7a563a" }}>
+                      <label htmlFor="sameAsBilling" className="form-check-label">
                         Shipping address same as billing
                       </label>
                     </div>
+
+                    {/* Shipping Address */}
                     {!formData.sameAsBilling && (
                       <div className="col-12">
+                        <label className="form-label">Shipping Address</label>
                         <textarea
-                          className="form-control themed-input"
-                          placeholder="Shipping Address"
                           name="shippingAddress"
+                          rows="3"
+                          className={`form-control themed-input ${
+                            errors.shippingAddress ? "is-invalid" : ""
+                          }`}
                           value={formData.shippingAddress}
                           onChange={handleChange}
-                          required
-                          rows={3}
-                        />
+                        ></textarea>
+                        {errors.shippingAddress && (
+                          <div className="error-text">
+                            {errors.shippingAddress}
+                          </div>
+                        )}
                       </div>
                     )}
+
+                    {/* Payment Method */}
                     <div className="col-12">
+                      <label className="form-label">Payment Method</label>
                       <select
                         className="form-select themed-select"
                         name="paymentMethod"
@@ -281,9 +363,10 @@ const Checkout = () => {
                       </select>
                     </div>
                   </div>
+
                   <hr className="my-4" />
                   <button type="submit" className="w-100 btn-themed btn-lg">
-                    Place Order (₹{totalAmount.toLocaleString()})
+                    Place Order (₹{totalAmount})
                   </button>
                 </form>
               </div>
@@ -291,111 +374,31 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
       <Footer />
 
       <style>{`
         :root {
           --brown-dark: #7a563a;
-          --brown-darker: #68492f;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
-          --text-medium: #7a563a;
-          --text-muted: #777;
+          --error-color: #b3261e;
         }
-        body, html, .container {
-          background-color: var(--cream-bg);
+
+        .error-text {
+          color: var(--error-color);
+          font-size: 0.85rem;
+          margin-top: 2px;
+          margin-left: 2px;
         }
-        .rounded-theme {
-          border-radius: 12px !important;
+
+        .is-invalid {
+          border-color: var(--error-color) !important;
         }
-        .shadow-theme {
-          box-shadow: 0 5px 14px rgba(122, 86, 58, 0.15) !important;
-        }
-        .text-theme-dark {
-          color: var(--text-dark);
-        }
-        .themed-input {
-          border-radius: 10px;
-          border: 1px solid var(--brown-light);
-          background: var(--cream-bg);
-          color: var(--brown-dark);
-          font-size: 1rem;
-          padding: 8px 12px;
-          transition: border-color 0.3s ease;
-        }
-        .themed-input:focus {
-          border-color: var(--brown-dark);
-          outline: none;
-          background: #fff;
-          box-shadow: 0 0 6px rgba(122, 86, 58, 0.25);
-        }
-        .themed-checkbox {
-          cursor: pointer;
-          accent-color: var(--brown-dark);
-          width: 1.1rem;
-          height: 1.1rem;
-        }
-        .themed-select {
-          border-radius: 10px;
-          border: 1px solid var(--brown-light);
-          background: var(--cream-bg);
-          color: var(--brown-dark);
-          font-size: 1rem;
-          padding: 6px 12px;
-          transition: border-color 0.3s ease;
-        }
-        .themed-select:focus {
-          border-color: var(--brown-dark);
-          outline: none;
-          background: #fff;
-          box-shadow: 0 0 6px rgba(122, 86, 58, 0.25);
-        }
-        .btn-themed {
-          background-color: var(--brown-dark);
-          color: #fff !important;
-          border-radius: 25px;
-          font-weight: 600;
-          padding: 12px 20px;
-          border: none;
-          text-align: center;
-          transition: background-color 0.3s ease;
-          cursor: pointer;
-          box-shadow: 0 2px 6px rgba(122, 86, 58, 0.18);
-        }
-        .btn-themed:hover,
-        .btn-themed:focus {
-          background-color: var(--brown-darker);
-          text-decoration: none;
-          outline: none;
-          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
-        }
-        .btn-outline-themed {
-          color: var(--brown-dark);
-          border-color: var(--brown-dark);
-          border-width: 2px;
-          border-radius: 25px;
-          font-weight: 600;
-          padding: 8px 24px;
-          transition: all 0.3s ease;
-        }
-        .btn-outline-themed:hover {
-          background-color: var(--brown-dark);
-          color: #fff;
-          border-color: var(--brown-dark);
-          text-decoration: none;
-        }
-        @media (max-width: 767px) {
-          .col-md-5,
-          .col-md-7 {
-            flex: 0 0 100%;
-            max-width: 100%;
-          }
-          .card-header h4 {
-            font-size: 1.5rem;
-          }
-          .btn-themed {
-            font-size: 1.1rem;
+
+        @media (max-width: 768px) {
+          .error-text {
+            font-size: 0.8rem;
           }
         }
       `}</style>

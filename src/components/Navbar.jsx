@@ -176,6 +176,7 @@ const Navbar = () => {
                       <img
                         src={getProfileImage(user)}
                         alt={user.customer_details?.full_name || "User"}
+                        referrerPolicy="no-referrer"
                         className="rounded-circle me-2 border"
                         style={{
                           width: "40px",
