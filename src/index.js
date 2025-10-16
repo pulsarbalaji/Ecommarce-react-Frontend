@@ -2,11 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "../node_modules/font-awesome/css/font-awesome.min.css";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./redux/store";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-
 
 import {
   Home,
@@ -34,6 +33,52 @@ import WhatsAppWidget from "./pages/WhatsAppWidget";
 import InstagramWidget from "./pages/Instagramwidget";
 import OfferModal from "./components/OfferModal";
 
+// ✅ Create a wrapper component so we can use useLocation()
+const AppContent = () => {
+  const location = useLocation();
+
+  // Define pages where widgets should be hidden
+  const hideOnRoutes = ["/login", "/register", "/verification"];
+  const shouldHide = hideOnRoutes.includes(location.pathname);
+
+  return (
+    <>
+      {/* Conditionally render these only when not hidden */}
+      {!shouldHide && (
+        <>
+
+          <OfferModal />
+        </>
+      )}
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/product" element={<Products />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/profile" element={<ProfileUpdateForm />} />
+
+        {/* Protected Routes */}
+        <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/product/:id" element={<ProtectedRoute><Product /></ProtectedRoute>} />
+        <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
+        <Route path="/order-tracking/:orderNumber" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
+        <Route path="/orderhistory" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verification" element={<Verification />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<PageNotFound />} />
+        <Route path="/product/*" element={<PageNotFound />} />
+      </Routes>
+    </>
+  );
+};
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
@@ -41,36 +86,9 @@ root.render(
       <AuthProvider>
         <ScrollToTop>
           <Provider store={store}>
-          <WhatsAppWidget />
-          <InstagramWidget />
-          <OfferModal/>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/product" element={<Products />} />
-              
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-
-              <Route path="/profile" element={<ProfileUpdateForm />} />
-
-              {/* Protected Routes */}
-              <Route path="/cart" element={<ProtectedRoute> <Cart /> </ProtectedRoute>} />
-              <Route path="/checkout" element={<ProtectedRoute> <Checkout /> </ProtectedRoute>} />
-              <Route path="/product/:id" element={ <ProtectedRoute> <Product /> </ProtectedRoute> } />
-              <Route path="/order-confirmation/:orderId" element={ <ProtectedRoute> <OrderConfirmation /> </ProtectedRoute> } />
-              <Route path="/order-tracking/:orderNumber" element={ <ProtectedRoute> <OrderTracking /> </ProtectedRoute> } />
-              <Route path="/orderhistory" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
-
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verification" element={<Verification />} />
-
-              {/* Fallback */}
-              <Route path="*" element={<PageNotFound />} />
-              <Route path="/product/*" element={<PageNotFound />} />
-            </Routes>
-
+            <WhatsAppWidget />
+            <InstagramWidget />
+            <AppContent />
           </Provider>
         </ScrollToTop>
       </AuthProvider>

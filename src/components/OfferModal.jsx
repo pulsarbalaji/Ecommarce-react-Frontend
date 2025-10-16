@@ -360,6 +360,7 @@ const OfferModal = () => {
                                                             textAlign: "center",
                                                             whiteSpace: "nowrap",
                                                         }}
+                                                        onClick={() => setShow(false)}
                                                     >
                                                         Buy Now
                                                     </Link>

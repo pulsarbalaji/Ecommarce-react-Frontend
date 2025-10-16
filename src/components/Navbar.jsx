@@ -83,12 +83,19 @@ const Navbar = () => {
         <div className="container py-2">
           {/* Brand */}
           <NavLink
-            className="navbar-brand fw-bold fs-3 text-success"
-            to="/"
-            onClick={handleNavLinkClick}
-          >
-            <span style={{ color: "#7a563a" }}>The</span> Parambariyam
-          </NavLink>
+  className="navbar-brand fw-bold fs-3 text-success d-flex align-items-center"
+  to="/"
+  onClick={handleNavLinkClick}
+  style={{ gap: "8px" }}
+>
+  <img
+    src="./Logo.jpeg"
+    alt="Logo"
+    style={{ height: "32px", width: "auto" }}
+  />
+  <span style={{ color: "#7a563a" }}>Vallalar</span> Natural's
+</NavLink>
+
 
           <WhatsAppWidget inNavbar={true} />
           <InstagramWidget inNavbar={true} />

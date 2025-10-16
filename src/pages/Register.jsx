@@ -5,9 +5,7 @@ import { FaEnvelope, FaMobileAlt, FaLock } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { auth, googleProvider } from "../firebase";
-import {
-  signInWithPopup,
-} from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import api from "../utils/base_url";
 
 const Register = () => {
@@ -19,19 +17,35 @@ const Register = () => {
 
   const navigate = useNavigate();
 
+  // Validate email format
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Validate password (min 6 characters)
+  const isValidPassword = (password) =>
+  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/.test(password);
+  // Validate phone (10 digits)
+  const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
+
   const handleEmailRegister = async (e) => {
     e.preventDefault();
+    if (!isValidEmail(email)) return toast.error("Please enter a valid email");
+    if (!isValidPassword(password)) {
+  return toast.error(
+    "Password must have at least 1 uppercase letter, 1 number, 1 special character, and minimum 6 characters"
+  );
+}
+
     setLoading(true);
     try {
-      const res = await api.post("register/email-step1/", {
-        email,
-        password,
-      });
+      const res = await api.post("register/email-step1/", { email, password });
       toast.success(res.data.message || "OTP sent to email");
       sessionStorage.setItem("session_id", res.data.session_id);
+      sessionStorage.setItem("email", email);
+      sessionStorage.setItem("password", password);
       navigate("/verification", { state: { type: "email" } });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Email register failed");
+      const errorMessage =
+        error.response?.data?.error || error.response?.data?.message || "Email registration failed";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -39,22 +53,26 @@ const Register = () => {
 
   const handlePhoneRegister = async (e) => {
     e.preventDefault();
+    if (!isValidPhone(phone)) return toast.error("Please enter a valid phone number");
+
     setLoading(true);
     try {
-      const res = await api.post("phone-register-step1/", {
-        phone,
-      });
+      const res = await api.post("phone-register-step1/", { phone });
       toast.success(res.data.message || "OTP sent to phone");
       sessionStorage.setItem("session_id", res.data.session_id);
+      sessionStorage.setItem("phone", phone);
       navigate("/verification", { state: { type: "phone" } });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Phone register failed");
+      const errorMessage =
+        error.response?.data?.error || error.response?.data?.message || "Phone registration failed";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleRegister = async () => {
+    setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
@@ -64,15 +82,16 @@ const Register = () => {
       toast.success("Google registration successful!");
       navigate("/dashboard");
     } catch (error) {
-      toast.error(error.response?.data?.error || error.message);
+      const errorMessage =
+        error.response?.data?.error || error.response?.data?.message || error.message || "Google registration failed";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div
-      className="register-container"
-      style={{ minHeight: "100vh", background: "#fffaf4" }}
-    >
+    <div className="register-container">
       <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -85,7 +104,7 @@ const Register = () => {
           <motion.button
             className={registerMethod === "email" ? "active" : ""}
             onClick={() => setRegisterMethod("email")}
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Email Register"
           >
             <FaEnvelope size={24} />
@@ -93,7 +112,7 @@ const Register = () => {
           <motion.button
             className={registerMethod === "phone" ? "active" : ""}
             onClick={() => setRegisterMethod("phone")}
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Phone Register"
           >
             <FaMobileAlt size={24} />
@@ -101,80 +120,69 @@ const Register = () => {
         </div>
 
         {registerMethod === "email" && (
-          <motion.form
-            onSubmit={handleEmailRegister}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="register-form"
-          >
+          <motion.form onSubmit={handleEmailRegister} className="register-form">
             <div className="floating-input">
               <input
                 type="email"
-                id="email"
                 placeholder=" "
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <label htmlFor="email">
+              <label>
                 <FaEnvelope /> Email
               </label>
             </div>
+
             <div className="floating-input">
               <input
                 type="password"
-                id="password"
                 placeholder=" "
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <label htmlFor="password">
+              <label>
                 <FaLock /> Password
               </label>
             </div>
-            <button disabled={loading} className="btn btn-primary register-btn" type="submit">
+
+            <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
               {loading ? "Please wait..." : "Register"}
             </button>
           </motion.form>
         )}
 
         {registerMethod === "phone" && (
-          <motion.form
-            onSubmit={handlePhoneRegister}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="register-form"
-          >
+          <motion.form onSubmit={handlePhoneRegister} className="register-form">
             <div className="floating-input">
               <input
                 type="tel"
-                id="phone"
                 placeholder=" "
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
               />
-              <label htmlFor="phone">
+              <label>
                 <FaMobileAlt /> Phone Number
               </label>
             </div>
-            <button disabled={loading} className="btn btn-primary register-btn" type="submit">
+
+            <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
               {loading ? "Sending..." : "Send OTP"}
             </button>
           </motion.form>
         )}
 
-        <div className="google-register-wrapper">
-          <button
-            onClick={handleGoogleRegister}
-            className="btn btn-google-register"
-            aria-label="Register with Google"
-          >
-            <FcGoogle size={24} className="google-icon" />
-            Register with Google
-          </button>
-        </div>
+        <button
+          onClick={handleGoogleRegister}
+          className="btn btn-google-register"
+          disabled={loading}
+          aria-label="Register with Google"
+        >
+          <FcGoogle size={24} />
+          Register with Google
+        </button>
 
         <p className="login-prompt">
           Already have an account?{" "}
@@ -182,7 +190,6 @@ const Register = () => {
             Login
           </Link>
         </p>
-
       </motion.div>
 
       <style>{`
