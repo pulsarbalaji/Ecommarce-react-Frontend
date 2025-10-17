@@ -80,7 +80,7 @@ const Navbar = () => {
             style={{ gap: "8px" }}
           >
             <img
-              src="./Logo.jpeg"
+              src={`${process.env.PUBLIC_URL}/Logo.jpeg`}
               alt="Logo"
               style={{ height: "32px", width: "auto" }}
             />
@@ -114,7 +114,7 @@ const Navbar = () => {
                     className="nav-link fw-semibold"
                     to={`/${name === "Home" ? "" : name.toLowerCase()}`}
                     style={({ isActive }) => ({
-                      color: isActive ? "rgb(112, 168, 77)" : "#444",
+                      color: isActive ? "rgb(112, 168, 77)" : "#000000ff",
                       borderBottom: isActive
                         ? "2px solid rgb(112, 168, 77)"
                         : "none",

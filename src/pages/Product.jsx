@@ -3,7 +3,6 @@ import Skeleton from "react-loading-skeleton";
 import { Link, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addCart } from "../redux/action";
-
 import { Footer, Navbar } from "../components";
 import api from "../utils/base_url";
 import toast from "react-hot-toast";
@@ -14,13 +13,12 @@ const Product = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
-
   const dispatch = useDispatch();
-  const addProduct = (product) => {
-  dispatch(addCart(product));
-  toast.success("Added to cart"); // ✅ show toast
-};
 
+  const addProduct = (product) => {
+    dispatch(addCart(product));
+    toast.success("Added to cart");
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -70,7 +68,6 @@ const Product = () => {
 
   const ShowProduct = () => {
     if (!product) return null;
-
     const hasOffer =
       product.offer_price !== null &&
       product.offer_price > 0 &&
@@ -80,7 +77,7 @@ const Product = () => {
       <div className="container my-5 py-2">
         <div className="row align-items-center">
           <div className="col-md-6 col-sm-12 py-3 text-center">
-            <div className="product-image-wrapper shadow-sm rounded bg-light p-3">
+            <div className="product-image-wrapper">
               <img
                 className="img-fluid"
                 src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
@@ -90,19 +87,19 @@ const Product = () => {
             </div>
           </div>
           <div className="col-md-6 py-3">
-            <h6 className="text-uppercase text-muted">{product.category_name}</h6>
-            <h3 className="fw-bold" style={{ color: "#5b3b25" }}>
-              {product.product_name}
-            </h3>
-            <p className="lead" style={{ color: "#7a563a" }}>
-              Rating: {product.average_rating} <i className="fa fa-star text-warning"></i>
+            <h6 className="text-uppercase" style={{color:"#000000ff"}} > {product.category_name}</h6>
+            <h3 className="fw-bold text-success">{product.product_name}</h3>
+
+            <p className="mb-2" style={{color:"#000000ff"}}>
+              Rating: {product.average_rating}{" "}
+              <i className="fa fa-star text-warning"></i>
             </p>
 
             <h4 className="text-success my-2">
               {hasOffer ? (
                 <>
                   ₹{parseFloat(product.offer_price).toLocaleString()}{" "}
-                  <small style={{ color: "#dc3545", textDecoration: "line-through", fontWeight: "normal" }}>
+                  <small className="text-danger text-decoration-line-through">
                     ₹{parseFloat(product.price).toLocaleString()}
                   </small>
                 </>
@@ -111,14 +108,18 @@ const Product = () => {
               )}
             </h4>
 
-            <p className="text-muted small" style={{ minHeight: "70px" }}>
+            <p className="small" style={{ minHeight: "70px", color:"#000000ff"}}>
               {product.product_description}
             </p>
+
             <div className="d-flex flex-wrap">
-              <button className="btn-themed-outline me-2 mb-2" onClick={() => addProduct(product)}>
+              <button
+                className="btn-green-outline me-2 mb-2"
+                onClick={() => addProduct(product)}
+              >
                 Add to Cart
               </button>
-              <Link to="/cart" className="btn-themed mb-2">
+              <Link to="/cart" className="btn-green mb-2">
                 Go to Cart
               </Link>
             </div>
@@ -140,20 +141,20 @@ const Product = () => {
 
   const ShowSimilarProducts = () => (
     <div className="my-5 container">
-      <h4 className="mb-3" style={{ color: "#7a563a", fontWeight: 600 }}>
-        You may also like
-      </h4>
+      <h4 className="mb-3 text-success fw-bold">You may also like</h4>
       <div className="scroll-container">
         {similarProducts.map((item) => {
-          const hasOffer = item.offer_price !== null && Number(item.offer_price) > 0 && item.offer_price !== item.price;
+          const hasOffer =
+            item.offer_price !== null &&
+            Number(item.offer_price) > 0 &&
+            item.offer_price !== item.price;
           return (
             <div
               key={item.id}
               className="card text-center border-0 shadow-sm rounded product-card-theme"
-              style={{ position: "relative" }}
             >
               {hasOffer && (
-                <div className="offer-ribbon">
+                <div className="offer-badge">
                   {Math.round(item.offer_percentage)}% OFF
                 </div>
               )}
@@ -167,14 +168,16 @@ const Product = () => {
                 />
               </div>
               <div className="card-body p-2">
-                <h6 className="card-title text-dark small text-truncate">
-                  {item.product_name.length > 18 ? item.product_name.substring(0, 18) + "..." : item.product_name}
+                <h6 className="card-title text-success small text-truncate">
+                  {item.product_name.length > 18
+                    ? item.product_name.substring(0, 18) + "..."
+                    : item.product_name}
                 </h6>
                 <p className="text-success small">
                   {hasOffer ? (
                     <>
                       ₹{parseFloat(item.offer_price).toLocaleString()}{" "}
-                      <small style={{ color: "#dc3545", textDecoration: "line-through", fontWeight: "normal", marginLeft: "6px" }}>
+                      <small className="text-danger text-decoration-line-through ms-1">
                         ₹{parseFloat(item.price).toLocaleString()}
                       </small>
                     </>
@@ -183,10 +186,16 @@ const Product = () => {
                   )}
                 </p>
                 <div className="d-flex justify-content-center flex-wrap">
-                  <Link to={`/product/${item.id}`} className="btn-themed-outline btn-sm me-2 mb-2">
+                  <Link
+                    to={`/product/${item.id}`}
+                    className="btn-green-outline btn-sm me-2 mb-2"
+                  >
                     View
                   </Link>
-                  <button className="btn-themed btn-sm mb-2" onClick={() => addProduct(item)}>
+                  <button
+                    className="btn-green btn-sm mb-2"
+                    onClick={() => addProduct(item)}
+                  >
                     +
                   </button>
                 </div>
@@ -201,20 +210,29 @@ const Product = () => {
   return (
     <>
       <Navbar />
-      <div style={{ backgroundColor: "#f5f7fa", minHeight: "100vh" }}>
+      <div style={{ backgroundColor: "#fffaf4", minHeight: "100vh" }}>
         {loading || !product ? <LoadingProduct /> : <ShowProduct />}
         {loadingSimilar ? <LoadingSimilar /> : <ShowSimilarProducts />}
       </div>
       <Footer />
 
+      {/* Theme Styles */}
       <style>{`
+        .product-image-wrapper {
+          background: #fffaf4;
+          border: 1.5px solid #e6d2b5;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
         .scroll-container {
           display: flex;
           overflow-x: auto;
           gap: 15px;
           padding-bottom: 12px;
           scrollbar-width: thin;
-          scrollbar-color: #7a563a #f1e6d4;
+          scrollbar-color: #198754 #f1e6d4;
         }
         .scroll-container::-webkit-scrollbar {
           height: 8px;
@@ -224,79 +242,68 @@ const Product = () => {
           border-radius: 10px;
         }
         .scroll-container::-webkit-scrollbar-thumb {
-          background: #7a563a;
+          background: #198754;
           border-radius: 10px;
         }
+
         .product-card-theme {
           flex: 0 0 160px;
-          transition: transform 0.2s ease;
-          background: #fff;
+          background: #fff9f3;
           border-radius: 12px;
-          border: 1px solid #f1e6d4;
-          box-shadow: 0 2px 7px rgba(122, 86, 58, 0.1);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          position: relative;
+          border: 1.5px solid #e6d2b5;
+          box-shadow: 0 2px 7px rgba(0,0,0,0.1);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .product-card-theme:hover {
           transform: scale(1.05);
-          box-shadow: 0 7px 18px rgba(122, 86, 58, 0.2);
+          box-shadow: 0 7px 18px rgba(112,168,77,0.2);
         }
-.offer-ribbon {
-  position: absolute;
-  top: 10px;
-  right: 0px;
-  background: linear-gradient(135deg, #ff4b2b, #ff416c);
-  color: #fff;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-  z-index: 5;
-}
 
+        .offer-badge {
+          position: absolute;
+          top: 10px;
+          right: 0;
+          background: linear-gradient(135deg, #ff4b2b, #ff416c);
+          color: #fff;
+          padding: 4px 10px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 6px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+          z-index: 5;
+        }
 
-
-
-        /* Buttons */
-        .btn-themed {
-          background-color: #7a563a;
+        .btn-green {
+          background-color: rgb(112,168,77);
           color: #fff !important;
           border: none;
           border-radius: 25px;
           padding: 5px 15px;
           font-weight: 600;
-          text-align: center;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-          display: inline-block;
-          user-select: none;
+          transition: all 0.3s ease;
+          text-decoration: none;
         }
-        .btn-themed:hover {
-          background-color: #68492f;
+        .btn-green:hover {
+          background-color: #95b25a;
           text-decoration: none;
         }
 
-        .btn-themed-outline {
+        .btn-green-outline {
           background-color: transparent;
-          color: #7a563a !important;
-          border: 1.5px solid #7a563a;
+          color: #198754 !important;
+          border: 1.5px solid #198754;
           border-radius: 25px;
-          padding: 4px 15px;
+          padding: 5px 15px;
           font-weight: 600;
-          cursor: pointer;
           transition: all 0.3s ease;
-          display: inline-block;
-          user-select: none;
-          text-align: center;
+          text-decoration: none;
         }
-        .btn-themed-outline:hover {
-          background-color: #7a563a;
+        .btn-green-outline:hover {
+          background-color: #198754;
           color: #fff !important;
           text-decoration: none;
         }
+
         .text-truncate {
           white-space: nowrap;
           overflow: hidden;

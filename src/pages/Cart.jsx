@@ -15,7 +15,7 @@ const Cart = () => {
     <div className="container">
       <div className="row">
         <div className="col-12 py-5 bg-light text-center rounded-theme">
-          <h4 className="p-3 display-5" style={{ color: "#7a563a" }}>
+          <h4 className="p-3 display-5" style={{ color: "#198754" }}>
             Your Cart is Empty
           </h4>
           <Link to="/" className="btn btn-outline-themed mx-4">
@@ -71,7 +71,7 @@ const Cart = () => {
                         <div className="row align-items-center g-2">
                           <div className="col-4 col-sm-3 text-center">
                             <img
-                              src={`http://127.0.0.1:8000${item.product_image}`}
+                              src={`${process.env.REACT_APP_API_URL}${item.product_image}`}
                               alt={item.product_name}
                               className="rounded-theme img-fluid"
                               style={{ maxHeight: "90px", objectFit: "contain" }}
@@ -91,7 +91,7 @@ const Cart = () => {
                             >
                               ₹ {priceToUse.toLocaleString()} each{" "}
                               {originalPrice && (
-                                <span style={{ fontSize: "0.8rem", textDecoration: "line-through", color: "#a0a0a0", marginLeft: "6px" }}>
+                                <span style={{ fontSize: "0.8rem", textDecoration: "line-through", color: "#ff0000ff", marginLeft: "6px" }}>
                                   ₹ {originalPrice.toLocaleString()}
                                 </span>
                               )}
@@ -189,13 +189,13 @@ const Cart = () => {
       {/* CSS Styles: */}
       <style>{`
         :root {
-          --brown-dark: #7a563a;
-          --brown-darker: #68492f;
+          --brown-dark: rgb(112,168,77);
+          --brown-darker: #198754;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
+          --text-dark: #198754;
           --text-medium: #7a563a;
-          --text-muted: #777;
+          --text-muted: #000000ff;
         }
         body, html, .container {
           background-color: var(--cream-bg);

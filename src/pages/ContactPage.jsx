@@ -44,7 +44,7 @@ const ContactPage = () => {
     <>
       <Navbar />
       <div className="container my-3 py-3">
-        <h3 className="text-center" style={{ color: "#7a563a", fontWeight: 700 }}>
+        <h3 className="text-center" style={{ color: "#198754", fontWeight: 700 }}>
           Contact Us
         </h3>
         <hr />
@@ -147,12 +147,12 @@ const ContactPage = () => {
   background: #fff;
 }
 .form label {
-  color: #68492f;
+  color: #198754;
   font-weight: 600;
   margin-bottom: 4px;
 }
 .btn-send {
-  background-color: #7a563a;
+  background-color: rgb(112,168,77);;
   color: #fff;
   font-size: 1rem;
   font-weight: 500;

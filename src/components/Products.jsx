@@ -313,7 +313,7 @@ const Products = () => {
           flex-grow: 1;
         }
         .product-title { font-weight: 600; font-size: 0.95rem; color: #198754; margin-bottom: 4px; }
-        .product-desc { color: #198754; font-size: 0.85rem; }
+        .product-desc { color: #030303ff; font-size: 0.85rem; }
 
         .product-price-wrap {
           display: flex;
@@ -341,13 +341,14 @@ const Products = () => {
           font-size: 0.8rem;
           font-weight: 500;
           transition: all 0.3s ease;
+          
         }
         .btn-buy {
           background-color: rgb(112,168,77);
           color: #fff;
           text-decoration: none;
         }
-        .btn-buy:hover { background-color: #95b25a; }
+        .btn-buy:hover { background-color: #95b25a;text-decoration: none; }
         .btn-cart {
           background-color: #f1e6d4;
           color: #198754;
@@ -355,16 +356,17 @@ const Products = () => {
         .btn-cart:hover { background-color: #e6d0b4; }
 
         .cat-btn {
-          border: 1px solid #95b25a;
+          border: 1px solid #198754;
           background: #fff;
-          color: #95b25a;
+          color: #198754;
           border-radius: 25px;
           padding: 6px 14px;
           font-weight: 500;
           transition: all 0.3s ease;
+          
         }
-        .cat-btn.active, .cat-btn:hover { background-color: #95b25a; color: #fff; }
-        .more-btn { background-color: #f1e6d4; color: #95b25a; }
+        .cat-btn.active, .cat-btn:hover { background-color: #198754; color: #fff; }
+        .more-btn { background-color: #f1e6d4; color: #198754; }
 
         .pagination-container {
           display: flex;
@@ -373,13 +375,14 @@ const Products = () => {
           gap: 15px;
         }
         .btn-nav {
-          background: rgb(112,168,77);
+          background: #198754;
           color: white;
           border: none;
           padding: 6px 14px;
           border-radius: 25px;
           font-size: 0.9rem;
           transition: all 0.3s ease;
+          
         }
         .btn-nav:hover { background: #95b25a; }
         .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -428,6 +431,7 @@ const Products = () => {
           cursor: pointer;
           transition: all 0.2s ease-in-out;
           z-index: 10;
+          
         }
         .modal-close-btn:hover { color: #198754; transform: scale(1.1); }
         .modal-title-themed { font-size: 1.1rem; font-weight: 600; color: #198754; text-align: center; margin-bottom: 10px; }

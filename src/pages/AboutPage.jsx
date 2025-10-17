@@ -36,11 +36,11 @@ const AboutPage = () => {
     <>
       <Navbar />
       <div className="container my-3 py-3">
-        <h1 className="text-center" style={{ color: "#7a563a", fontWeight: 700 }}>
+        <h1 className="text-center" style={{ color: "#198754", fontWeight: 700 }}>
           About Us
         </h1>
         <hr />
-        <p className="lead text-center" style={{ color: "#68492f", maxWidth: "700px", margin: "0 auto" }}>
+        <p className="lead text-center" style={{ color: "#000000ff", maxWidth: "700px", margin: "0 auto" }}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum
           facere doloremque veritatis odit similique sequi. Odit amet fuga nam
           quam quasi facilis sed doloremque saepe sint perspiciatis explicabo
@@ -48,7 +48,7 @@ const AboutPage = () => {
           recusandae est mollitia esse fugit dolore laudantium.
         </p>
 
-        <h2 className="text-center py-4" style={{ color: "#7a563a", fontWeight: 600 }}>
+        <h2 className="text-center py-4" style={{ color: "#198754", fontWeight: 600 }}>
           Our Categories
         </h2>
 
@@ -105,7 +105,7 @@ const AboutPage = () => {
           padding-bottom: 12px;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: thin;
-          scrollbar-color: #7a563a #f1e6d4;
+          scrollbar-color: #198754 #f1e6d4;
         }
         /* Webkit scrollbar styling */
         .categories-scroll-wrapper::-webkit-scrollbar {
@@ -116,7 +116,7 @@ const AboutPage = () => {
           border-radius: 10px;
         }
         .categories-scroll-wrapper::-webkit-scrollbar-thumb {
-          background: #7a563a;
+          background: #198754;
           border-radius: 10px;
         }
 
@@ -201,11 +201,11 @@ const AboutPage = () => {
         .product-title {
           font-weight: 600;
           font-size: 1rem;
-          color: #5b3b25;
+          color: #198754;
           margin-bottom: 6px;
         }
         .product-desc {
-          color: #777;
+          color: #000000ff;
           font-size: 0.85rem;
           flex-grow: 1;
           overflow: hidden;
@@ -218,7 +218,7 @@ const AboutPage = () => {
 
         .btn-nav {
           border: none;
-          background: #7a563a;
+          background: #198754;
           color: #fff;
           padding: 8px 20px;
           border-radius: 25px;
@@ -228,7 +228,7 @@ const AboutPage = () => {
           cursor: pointer;
         }
         .btn-nav:hover {
-          background: #68492f;
+          background: #198754;
         }
         .btn-nav:disabled {
           opacity: 0.5;

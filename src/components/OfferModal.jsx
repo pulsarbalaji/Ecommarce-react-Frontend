@@ -79,7 +79,7 @@ const OfferModal = () => {
                     right: 0,
                     top: "45%",
                     zIndex: 3000,
-                    background: "linear-gradient(180deg, #43a047 0%, #2e7d32 100%)",
+                    background: "linear-gradient(180deg, rgb(112,168,77) 0%, rgb(112,168,77) 100%)",
                     color: "#fff",
                     fontWeight: 700,
                     height: 110,
@@ -96,12 +96,12 @@ const OfferModal = () => {
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background =
-                        "linear-gradient(180deg, #4caf50 0%, #2e7d32 100%)";
+                        "linear-gradient(180deg, rgb(112,168,77) 0%, rgb(112,168,77) 100%)";
                     e.currentTarget.style.transform = "translateX(-3px)";
                 }}
                 onMouseLeave={(e) => {
                     e.currentTarget.style.background =
-                        "linear-gradient(180deg, #43a047 0%, #2e7d32 100%)";
+                        "linear-gradient(180deg, rgb(112,168,77) 0%, rgb(112,168,77) 100%)";
                     e.currentTarget.style.transform = "translateX(0)";
                 }}
             >
@@ -148,7 +148,7 @@ const OfferModal = () => {
                         width: 0,
                         height: 0,
                         borderBottom: "12px solid transparent",
-                        borderLeft: "12px solid #2e7d32",
+                        borderLeft: "12px solid rgb(112,168,77)",
                     }}
                 />
             </button>
