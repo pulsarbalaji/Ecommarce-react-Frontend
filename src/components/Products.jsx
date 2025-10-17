@@ -192,42 +192,40 @@ const Products = () => {
       </div>
 
       {/* Modal */}
- {showModal && (
-  <>
-    <div
-      className="modal-backdrop-themed"
-      onClick={() => setShowModal(false)}
-    ></div>
+      {showModal && (
+        <>
+          <div
+            className="modal-backdrop-themed"
+            onClick={() => setShowModal(false)}
+          ></div>
 
-    <div className="modal-content-themed" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close-btn" onClick={() => setShowModal(false)}>
-        ×
-      </button>
+          <div className="modal-content-themed" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setShowModal(false)}>
+              ×
+            </button>
 
-      <h5 className="modal-title-themed">All Categories</h5>
+            <h5 className="modal-title-themed">All Categories</h5>
 
-      <div className="modal-body-themed">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            className={`cat-btn w-100 mb-2 ${
-              selectedCat === cat.id ? "active" : ""
-            }`}
-            onClick={() => {
-              setSelectedCat(cat.id);
-              fetchProducts(1, cat.id);
-              setShowModal(false);
-            }}
-          >
-            {cat.category_name}
-          </button>
-        ))}
-      </div>
-    </div>
-  </>
-)}
-
-
+            <div className="modal-body-themed">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={`cat-btn w-100 mb-2 ${
+                    selectedCat === cat.id ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedCat(cat.id);
+                    fetchProducts(1, cat.id);
+                    setShowModal(false);
+                  }}
+                >
+                  {cat.category_name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 
@@ -249,46 +247,41 @@ const Products = () => {
       <div className="flex-grow-1 container my-4 py-3">
         <h2
           className="display-6 fw-bold text-center text-uppercase mb-4"
-          style={{ color: "#7a563a" }}
+          style={{ color: "#198754" }}
         >
           Our Products
         </h2>
         {loading ? <Loading /> : <ShowProducts />}
       </div>
 
+      {/* Theme CSS */}
       <style>{`
-        /* ✅ Responsive Grid */
+        /* Grid */
         .grid-container {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 18px;
           padding: 0 10px;
         }
-        @media (min-width: 768px) {
-          .grid-container { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (min-width: 1024px) {
-          .grid-container { grid-template-columns: repeat(4, 1fr); }
-        }
-        @media (min-width: 1400px) {
-          .grid-container { grid-template-columns: repeat(6, 1fr); }
-        }
+        @media (min-width: 768px) { .grid-container { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1400px) { .grid-container { grid-template-columns: repeat(6, 1fr); } }
 
         /* Product Card */
         .product-card {
           position: relative;
-          background: #fff;
+          background: #fff9f3;
           border-radius: 12px;
           overflow: hidden;
-          border: 1px solid #f1e6d4;
+          border: 1.5px solid #e6d2b5;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           height: 340px;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .product-card.card-even { background: #fffaf6; }
-        .product-card.card-odd { background: #fdf6f0; }
+        .product-card.card-even { background: #fff9f3; }
+        .product-card.card-odd { background: #fffaf4; }
 
         .offer-badge {
           position: absolute;
@@ -300,7 +293,7 @@ const Products = () => {
           font-size: 0.75rem;
           font-weight: 600;
           border-radius: 6px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
           z-index: 5;
         }
 
@@ -311,12 +304,7 @@ const Products = () => {
           align-items: center;
           justify-content: center;
         }
-        .img-wrapper img {
-          width: 80%;
-          height: 100%;
-          object-fit: contain;
-          transition: transform 0.3s ease;
-        }
+        .img-wrapper img { width: 80%; height: 100%; object-fit: contain; transition: transform 0.3s ease; }
         .product-card:hover img { transform: scale(1.05); }
 
         .product-content {
@@ -324,8 +312,8 @@ const Products = () => {
           padding: 10px 12px;
           flex-grow: 1;
         }
-        .product-title { font-weight: 600; font-size: 0.95rem; color: #5b3b25; margin-bottom: 4px; }
-        .product-desc { color: #777; font-size: 0.85rem; }
+        .product-title { font-weight: 600; font-size: 0.95rem; color: #198754; margin-bottom: 4px; }
+        .product-desc { color: #198754; font-size: 0.85rem; }
 
         .product-price-wrap {
           display: flex;
@@ -335,9 +323,9 @@ const Products = () => {
           margin-top: 6px;
           white-space: nowrap;
         }
-        .product-price { color: #7a563a; font-weight: bold; font-size: 1rem; }
+        .product-price { color: rgb(112,168,77); font-weight: bold; font-size: 1rem; }
         .product-price-original { color: #dc3545; font-size: 0.93rem; }
-        .product-price-offer { color: #28a745; font-size: 1.17rem; font-weight: 700; }
+        .product-price-offer { color: #198754; font-size: 1.17rem; font-weight: 700; }
 
         .product-btns {
           display: flex;
@@ -346,7 +334,6 @@ const Products = () => {
           padding-bottom: 10px;
         }
 
-        /* Buttons */
         .btn-buy, .btn-cart {
           border: none;
           border-radius: 25px;
@@ -356,37 +343,29 @@ const Products = () => {
           transition: all 0.3s ease;
         }
         .btn-buy {
-          background-color: #7a563a;
+          background-color: rgb(112,168,77);
           color: #fff;
           text-decoration: none;
         }
-        .btn-buy:hover { background-color: #68492f; }
+        .btn-buy:hover { background-color: #95b25a; }
         .btn-cart {
           background-color: #f1e6d4;
-          color: #7a563a;
+          color: #198754;
         }
-        .btn-cart:hover { background-color: #e8d5b9; }
+        .btn-cart:hover { background-color: #e6d0b4; }
 
-        /* Category Buttons */
         .cat-btn {
-          border: 1px solid #7a563a;
+          border: 1px solid #95b25a;
           background: #fff;
-          color: #7a563a;
+          color: #95b25a;
           border-radius: 25px;
           padding: 6px 14px;
           font-weight: 500;
           transition: all 0.3s ease;
         }
-        .cat-btn.active, .cat-btn:hover {
-          background-color: #7a563a;
-          color: #fff;
-        }
-        .more-btn {
-          background-color: #f1e6d4;
-          color: #7a563a;
-        }
+        .cat-btn.active, .cat-btn:hover { background-color: #95b25a; color: #fff; }
+        .more-btn { background-color: #f1e6d4; color: #95b25a; }
 
-        /* Pagination */
         .pagination-container {
           display: flex;
           justify-content: center;
@@ -394,7 +373,7 @@ const Products = () => {
           gap: 15px;
         }
         .btn-nav {
-          background: #7a563a;
+          background: rgb(112,168,77);
           color: white;
           border: none;
           padding: 6px 14px;
@@ -402,83 +381,57 @@ const Products = () => {
           font-size: 0.9rem;
           transition: all 0.3s ease;
         }
-        .btn-nav:hover { background: #68492f; }
+        .btn-nav:hover { background: #95b25a; }
         .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ✅ Mobile Tweaks Restored */
         @media (max-width: 767px) {
-          .btn-buy, .btn-cart, .cat-btn, .btn-nav {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-          }
-          .product-card {
-            height: auto;
-          }
+          .btn-buy, .btn-cart, .cat-btn, .btn-nav { padding: 4px 8px; font-size: 0.75rem; }
+          .product-card { height: auto; }
         }
-          .modal-backdrop-themed {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(255, 250, 244, 0.8);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 1050;
-}
 
-.modal-content-themed {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 400px;
-  background-color: #fffaf4;
-  border: 1.5px solid #f1e6d4;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(122, 86, 58, 0.16);
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 20px;
-  z-index: 1060;
-  display: flex;
-  flex-direction: column;
-}
-  /* --- Modal Close Button --- */
-.modal-close-btn {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #7a563a;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  z-index: 10;
-}
-
-.modal-close-btn:hover {
-  color: #5b3b25;
-  transform: scale(1.1);
-}
-
-/* Optional modal title and body for consistent spacing */
-.modal-title-themed {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #7a563a;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.modal-body-themed {
-  margin-top: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-
+        /* Modal */
+        .modal-backdrop-themed {
+          position: fixed;
+          inset: 0;
+          background-color: rgba(255, 249, 243, 0.8);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          z-index: 1050;
+        }
+        .modal-content-themed {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 90%;
+          max-width: 400px;
+          background-color: #fffaf4;
+          border: 1.5px solid #e6d2b5;
+          border-radius: 14px;
+          box-shadow: 0 6px 18px rgba(122,86,58,0.16);
+          max-height: 80vh;
+          overflow-y: auto;
+          padding: 20px;
+          z-index: 1060;
+          display: flex;
+          flex-direction: column;
+        }
+        .modal-close-btn {
+          position: absolute;
+          top: 10px;
+          right: 12px;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #198754;
+          cursor: pointer;
+          transition: all 0.2s ease-in-out;
+          z-index: 10;
+        }
+        .modal-close-btn:hover { color: #198754; transform: scale(1.1); }
+        .modal-title-themed { font-size: 1.1rem; font-weight: 600; color: #198754; text-align: center; margin-bottom: 10px; }
+        .modal-body-themed { margin-top: 5px; display: flex; flex-direction: column; gap: 8px; }
       `}</style>
     </div>
   );

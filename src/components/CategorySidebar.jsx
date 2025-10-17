@@ -13,8 +13,8 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
           position: sticky;
           top: 80px;
           align-self: flex-start;
-          background: #fffaf4;
-          border-right: 1.5px solid #f1e6d4;
+          background: #fff9f3; /* updated background to match Navbar */
+          border-right: 1.5px solid #e6d2b5; /* updated border */
           height: calc(100vh - 80px);
           overflow: hidden;
           z-index: 10;
@@ -43,13 +43,13 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
 
         /* Hover effects for category items */
         .category-sidebar .list-group-item:hover {
-          background-color: #f7ede2 !important;
-          color: #7a563a !important;
+          background-color: #f7f0e6 !important; /* light hover similar to navbar */
+          color: #70a84d !important; /* primary green */
         }
 
         /* Active item style */
         .category-sidebar .list-group-item.active {
-          background-color: #7a563a !important;
+          background-color: #70a84d !important; /* primary green */
           color: #fff !important;
           border: none !important;
         }
@@ -68,7 +68,7 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
         <div className="sidebar-scroll-area">
           <h5
             className="text-center fw-bold mb-3"
-            style={{ color: "#7a563a", flexShrink: 0 }}
+            style={{ color: "#198754", flexShrink: 0 }} /* updated header color */
           >
             Categories
           </h5>
@@ -87,8 +87,8 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
               }`}
               onClick={() => handleCategory(null)}
               style={{
-                background: selectedCat === null ? "#7a563a" : "transparent",
-                color: selectedCat === null ? "#fff" : "#7a563a",
+                background: selectedCat === null ? "#70a84d" : "transparent",
+                color: selectedCat === null ? "#fff" : "#70a84d",
                 border: "none",
                 fontWeight: 600,
               }}
@@ -106,8 +106,8 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
                 onClick={() => handleCategory(cat.id)}
                 style={{
                   background:
-                    selectedCat === cat.id ? "#7a563a" : "transparent",
-                  color: selectedCat === cat.id ? "#fff" : "#7a563a",
+                    selectedCat === cat.id ? "#70a84d" : "transparent",
+                  color: selectedCat === cat.id ? "#fff" : "#70a84d",
                   border: "none",
                   fontWeight: 600,
                 }}

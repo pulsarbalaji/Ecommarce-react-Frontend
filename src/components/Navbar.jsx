@@ -15,15 +15,8 @@ const Navbar = () => {
   const [openMenu, setOpenMenu] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Toggle mobile menu open/close
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  // Close menu on clicking nav links in mobile
-  const handleNavLinkClick = () => {
-    if (isMenuOpen) setIsMenuOpen(false);
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const handleNavLinkClick = () => isMenuOpen && setIsMenuOpen(false);
 
   const handleLogout = async () => {
     const refresh = sessionStorage.getItem("refresh");
@@ -61,9 +54,7 @@ const Navbar = () => {
         }
         return decoded;
       }
-      if (img.startsWith("http")) {
-        return img;
-      }
+      if (img.startsWith("http")) return img;
     }
     if (!img.startsWith("http")) {
       img = `${process.env.REACT_APP_API_URL}${img}`;
@@ -83,23 +74,21 @@ const Navbar = () => {
         <div className="container py-2">
           {/* Brand */}
           <NavLink
-  className="navbar-brand fw-bold fs-3 text-success d-flex align-items-center"
-  to="/"
-  onClick={handleNavLinkClick}
-  style={{ gap: "8px" }}
->
-  <img
-    src="./Logo.jpeg"
-    alt="Logo"
-    style={{ height: "32px", width: "auto" }}
-  />
-  <span style={{ color: "#7a563a" }}>Vallalar</span> Natural's
-</NavLink>
-
+            className="navbar-brand fw-bold fs-3 text-success d-flex align-items-center"
+            to="/"
+            onClick={handleNavLinkClick}
+            style={{ gap: "8px" }}
+          >
+            <img
+              src="./Logo.jpeg"
+              alt="Logo"
+              style={{ height: "32px", width: "auto" }}
+            />
+            <span style={{ color: "rgb(112, 168, 77)" }}>Vallalar</span> Natural's
+          </NavLink>
 
           <WhatsAppWidget inNavbar={true} />
           <InstagramWidget inNavbar={true} />
-
 
           {/* Mobile Toggle */}
           <button
@@ -125,8 +114,10 @@ const Navbar = () => {
                     className="nav-link fw-semibold"
                     to={`/${name === "Home" ? "" : name.toLowerCase()}`}
                     style={({ isActive }) => ({
-                      color: isActive ? "#7a563a" : "#444",
-                      borderBottom: isActive ? "2px solid #7a563a" : "none",
+                      color: isActive ? "rgb(112, 168, 77)" : "#444",
+                      borderBottom: isActive
+                        ? "2px solid rgb(112, 168, 77)"
+                        : "none",
                       transition: "all 0.3s ease",
                     })}
                     onClick={handleNavLinkClick}
@@ -147,7 +138,7 @@ const Navbar = () => {
                     className="btn position-relative me-3"
                     style={{
                       borderRadius: "30px",
-                      backgroundColor: "#7a563a",
+                      backgroundColor: "rgb(112, 168, 77)",
                       color: "#fff",
                       padding: "8px 18px",
                       fontWeight: 500,
@@ -166,6 +157,7 @@ const Navbar = () => {
                       </span>
                     )}
                   </NavLink>
+
                   {/* Profile Dropdown */}
                   <div className="position-relative">
                     <button
@@ -173,7 +165,7 @@ const Navbar = () => {
                       style={{
                         border: "none",
                         background: "transparent",
-                        color: "#7a563a",
+                        color: "rgb(112, 168, 77)",
                         fontWeight: 600,
                         fontSize: "1rem",
                         whiteSpace: "nowrap",
@@ -199,6 +191,7 @@ const Navbar = () => {
                         style={{ fontSize: "0.8rem" }}
                       ></i>
                     </button>
+
                     {openMenu && (
                       <div
                         className="dropdown-menu-themed position-absolute"
@@ -235,17 +228,18 @@ const Navbar = () => {
                         >
                           Logout
                         </button>
+
                         <style>{`
                           .dropdown-menu-themed {
                             border: 1.5px solid #f1e6d4;
                             background-color: #fffaf4;
-                            box-shadow: 0 6px 18px rgba(122, 86, 58, 0.16);
+                            box-shadow: 0 6px 18px rgba(112, 168, 77, 0.2);
                             border-radius: 14px;
                             padding: 10px 0;
                           }
                           .dropdown-item-themed {
                             background: none;
-                            color: #7a563a;
+                            color: rgb(112, 168, 77);
                             padding: 10px 24px;
                             border-radius: 10px;
                             border: none;
@@ -256,7 +250,7 @@ const Navbar = () => {
                             transition: background-color 0.28s, color 0.28s;
                           }
                           .dropdown-item-themed:hover, .dropdown-item-themed:focus {
-                            background-color: #7a563a !important;
+                            background-color: rgb(112, 168, 77) !important;
                             color: #fff !important;
                           }
                           .dropdown-item-danger {
@@ -276,18 +270,17 @@ const Navbar = () => {
                   </div>
                 </div>
               ) : (
-                // Login/Register Buttons: row on mobile, normal on desktop
                 <div className="auth-buttons">
                   <NavLink
                     to="/login"
                     className="btn btn-outline-themed"
                     style={{
                       borderRadius: "30px",
-                      border: "1px solid #7a563a",
-                      color: "#7a563a",
+                      border: "1.5px solid rgb(112, 168, 77)",
+                      color: "rgb(112, 168, 77)",
                       fontWeight: 500,
                       padding: "8px 18px",
-                      whiteSpace: "nowrap"
+                      whiteSpace: "nowrap",
                     }}
                     onClick={handleNavLinkClick}
                   >
@@ -298,11 +291,11 @@ const Navbar = () => {
                     className="btn btn-themed"
                     style={{
                       borderRadius: "30px",
-                      backgroundColor: "#7a563a",
+                      backgroundColor: "rgb(112, 168, 77)",
                       color: "#fff",
                       fontWeight: 500,
                       padding: "8px 18px",
-                      whiteSpace: "nowrap"
+                      whiteSpace: "nowrap",
                     }}
                     onClick={handleNavLinkClick}
                   >
@@ -313,14 +306,13 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-        
       </nav>
 
       {user && <ProfileUpdateForm />}
 
       <style>{`
         .btn-themed {
-          background-color: #7a563a;
+          background-color: rgb(112, 168, 77);
           color: #fff !important;
           border-radius: 25px;
           font-weight: 600;
@@ -329,59 +321,41 @@ const Navbar = () => {
           font-size: 1rem;
           transition: background-color 0.3s ease;
           cursor: pointer;
-          box-shadow: 0 2px 6px rgba(122, 86, 58, 0.18);
+          box-shadow: 0 2px 6px rgba(112, 168, 77, 0.25);
         }
         .btn-themed:hover,
         .btn-themed:focus {
-          background-color: #68492f;
-          text-decoration: none;
-          outline: none;
-          box-shadow: 0 0 10px rgba(122, 86, 58, 0.6);
+          background-color: rgb(95, 142, 66);
+          box-shadow: 0 0 10px rgba(112, 168, 77, 0.6);
         }
         .btn-outline-themed {
-          color: #7a563a !important;
-          border: 1.5px solid #7a563a !important;
+          color: rgb(112, 168, 77) !important;
+          border: 1.5px solid rgb(112, 168, 77) !important;
           border-radius: 25px;
           font-weight: 600;
           padding: 8px 18px;
           font-size: 1rem;
           background-color: transparent;
-          cursor: pointer;
           transition: all 0.3s ease;
-          text-align: center;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
         }
         .btn-outline-themed:hover,
         .btn-outline-themed:focus {
-          background-color: #7a563a !important;
+          background-color: rgb(112, 168, 77) !important;
           color: #fff !important;
-          text-decoration: none;
-          outline: none;
         }
-        /* Only apply row layout for login/register on mobile */
         .auth-buttons {
           display: flex;
           gap: 8px;
         }
         @media (max-width: 576px) {
-          .d-flex.align-items-center.text-center.flex-wrap.gap-2 {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
           .auth-buttons {
             flex-direction: row !important;
             width: 100%;
           }
-          .auth-buttons .btn,
-          .auth-buttons .btn-outline-themed {
+          .auth-buttons .btn {
             width: 50% !important;
-            margin-right: 0 !important;
-            margin-bottom: 0 !important;
             font-size: 0.95rem;
             padding: 8px 0;
-            min-width: 0 !important;
           }
         }
       `}</style>
