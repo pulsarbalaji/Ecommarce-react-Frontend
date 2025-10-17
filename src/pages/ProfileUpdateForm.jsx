@@ -95,7 +95,7 @@ const ProfileUpdateForm = () => {
         <div className="modal-content">
           <form onSubmit={handleSubmit} className="profile-form">
             <div className="modal-header">
-              <h5 className="modal-title" style={{ color: "#7a563a", fontWeight: "700" }}>
+              <h5 className="modal-title" style={{ color: "#198754", fontWeight: "700" }}>
                 Update Profile
               </h5>
               <button
@@ -178,7 +178,7 @@ const ProfileUpdateForm = () => {
 
                 {/* Profile Photo */}
                 <div className="col-md-12">
-                  <label className="form-label" style={{ color: "#68492f", fontWeight: "600" }}>
+                  <label className="form-label" style={{ color: "#198754", fontWeight: "600" }}>
                     Profile Photo
                   </label>
 
@@ -232,23 +232,23 @@ const ProfileUpdateForm = () => {
           border-radius: 10px;
           border: 1px solid #f1e6d4;
           background: #fffaf4;
-          color: #7a563a;
+          color: #000000ff;
           font-size: 1rem;
           transition: border-color 0.3s ease;
           box-shadow: none;
         }
         .themed-input:focus {
-          border-color: #7a563a;
+          border-color: #198754;
           background: #fff;
           outline: none;
           box-shadow: 0 0 5px rgba(122, 86, 58, 0.4);
         }
         .profile-form .form-floating > label {
-          color: #68492f;
+          color: #000000ff;
           font-weight: 600;
         }
         .btn-themed {
-          background-color: #7a563a;
+          background-color: #198754;
           color: #fff;
           border-radius: 25px;
           border: none;
@@ -259,10 +259,10 @@ const ProfileUpdateForm = () => {
           box-shadow: 0 2px 6px rgba(122, 86, 58, 0.12);
         }
         .btn-themed:hover {
-          background-color: #68492f;
+          background-color: #198754;
         }
         .btn-themed:focus, .btn-themed:active {
-          background-color: #68492f;
+          background-color: #198754;
           outline: none;
           box-shadow: 0 0 7px rgba(122, 86, 58, 0.5);
         }

@@ -114,7 +114,7 @@ const ContactPage = () => {
               </div>
             </form>
             {responseMsg && (
-              <p className="text-center mt-3" style={{ color: "#7a563a" }}>
+              <p className="text-center mt-3" style={{ color: "#198754" }}>
                 {responseMsg}
               </p>
             )}
@@ -136,13 +136,13 @@ const ContactPage = () => {
   border-radius: 8px;
   border: 1px solid #f1e6d4;
   background: #fffaf4;
-  color: #7a563a;
+  color: #198754;
   font-size: 1rem;
   transition: border-color 0.2s;
   box-shadow: none;
 }
 .input-style:focus {
-  border-color: #7a563a;
+  border-color: #198754;
   outline: none;
   background: #fff;
 }
@@ -165,10 +165,10 @@ const ContactPage = () => {
 }
 .btn-send:active,
 .btn-send:focus {
-  background-color: #68492f;
+  background-color: #198754;
 }
 .btn-send:hover:not(:disabled) {
-  background-color: #68492f;
+  background-color: #198754;
 }
 @media (max-width: 767px) {
   .contact-form-card {

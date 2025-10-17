@@ -122,12 +122,12 @@ const OrderHistory = () => {
 
       <style>{`
         :root {
-          --brown-dark: #7a563a;
-          --brown-darker: #68492f;
+          --brown-dark: rgb(112,168,77);
+          --brown-darker: #198754;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
-          --text-medium: #7a563a;
+          --text-dark: #000000ff;
+          --text-medium: #000000ff;
         }
 
         body, html, .container {
@@ -154,7 +154,7 @@ const OrderHistory = () => {
 
         .btn-nav {
   border: none;
-  background: #7a563a;
+  background: rgb(112,168,77);
   color: #fff;
   padding: 6px 14px;
   border-radius: 25px;
@@ -164,13 +164,7 @@ const OrderHistory = () => {
 }
 
 .btn-nav:hover {
-  background: #68492f;
-}
-
-.page-indicator {
-  padding: 6px 14px;
-  font-weight: 500;
-  color: #7a563a;
+  background: #198754;
 }
 
         @media (max-width: 576px) {

@@ -209,7 +209,7 @@ const Register = () => {
           padding: 50px 35px;
           width: 100%;
           max-width: 440px;
-          color: #7a563a;
+          color: #198754;
           font-weight: 600;
           text-align: center;
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -218,7 +218,7 @@ const Register = () => {
           font-size: 2rem;
           font-weight: 700;
           margin-bottom: 30px;
-          color: #7a563a;
+          color: #198754;
         }
         .register-method-toggle {
           display: flex;
@@ -230,9 +230,9 @@ const Register = () => {
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          border: 2px solid #7a563a;
+          border: 2px solid #198754;
           background: #fffaf4;
-          color: #7a563a;
+          color: #198754;
           cursor: pointer;
           font-size: 1.5rem;
           font-weight: 700;
@@ -242,9 +242,9 @@ const Register = () => {
           transition: background-color 0.3s ease;
         }
         .register-method-toggle button.active {
-          background-color: #7a563a;
+          background-color: #198754;
           color: #fff;
-          box-shadow: 0 0 10px rgba(122, 86, 58, 0.5);
+          box-shadow: 0 0 10px rgb(112,168,77);
         }
         .register-method-toggle button:hover:not(.active) {
           background-color: #f6ede0;
@@ -265,14 +265,14 @@ const Register = () => {
           background-color: #fffaf4;
           font-weight: 600;
           font-size: 1.1rem;
-          color: #7a563a;
+          color: #198754;
           padding: 14px 14px 14px 42px;
           box-shadow: inset 0 0 6px rgba(245, 245, 245, 0.5);
           outline: none;
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .floating-input input:focus {
-          border-color: #7a563a;
+          border-color: #198754;
           box-shadow: 0 0 10px rgba(122, 86, 58, 0.4);
         }
         .floating-input input::placeholder {
@@ -285,7 +285,7 @@ const Register = () => {
           transform: translateY(-50%);
           pointer-events: none;
           font-weight: 600;
-          color: #7a563a;
+          color: #198754;
           font-size: 1rem;
           display: flex;
           align-items: center;
@@ -297,7 +297,7 @@ const Register = () => {
         .floating-input input:not(:placeholder-shown) + label {
           top: 5px;
           font-size: 0.85rem;
-          color: #bf9f71;
+          color: rgb(112,168,77);
           font-weight: 700;
           background: #fffaf4;
           padding: 0 8px;
@@ -305,7 +305,7 @@ const Register = () => {
           left: 15px;
         }
         .btn-primary.register-btn {
-          background-color: #7a563a;
+          background-color: #198754;
           color: #fff;
           border-radius: 30px;
           padding: 15px 0;
@@ -318,19 +318,19 @@ const Register = () => {
         }
         .btn-primary.register-btn:hover,
         .btn-primary.register-btn:focus {
-          background-color: #68492f;
+          background-color: rgb(112,168,77);
           outline: none;
-          box-shadow: 0 8px 24px rgba(122, 86, 58, 0.5);
+          box-shadow: 0 8px 24px rgb(112,168,77);
         }
         .btn-google-register {
           margin-top: 35px;
           background-color: transparent;
-          border: 2px solid #7a563a;
+          border: 2px solid #198754;
           border-radius: 30px;
           padding: 12px 0;
           font-weight: 700;
           font-size: 1.15rem;
-          color: #7a563a;
+          color: #198754;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -340,7 +340,7 @@ const Register = () => {
           width: 100%;
         }
         .btn-google-register:hover {
-          background-color: #7a563a;
+          background-color: #198754;
           color: #fff;
         }
         .google-icon {
@@ -350,17 +350,17 @@ const Register = () => {
           margin-top: 38px;
           text-align: center;
           font-weight: 600;
-          color: #7a563a;
+          color: #198754;
           font-size: 1rem;
         }
         .login-prompt a {
-          color: #bf9f71;
+          color: rgb(112,168,77);
           font-weight: 700;
           text-decoration: underline;
           transition: color 0.3s ease;
         }
         .login-prompt a:hover {
-          color: #68492f;
+          color: #198754;
         }
         @media (max-width: 768px) {
           .register-card{

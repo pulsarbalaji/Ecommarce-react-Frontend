@@ -165,7 +165,7 @@ const Navbar = () => {
                       style={{
                         border: "none",
                         background: "transparent",
-                        color: "rgb(112, 168, 77)",
+                        color: "rgba(0, 0, 0, 1)",
                         fontWeight: 600,
                         fontSize: "1rem",
                         whiteSpace: "nowrap",

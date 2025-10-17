@@ -200,7 +200,7 @@ const OfferModal = () => {
                                 justifyContent: "space-between"
                             }}
                         >
-                            <h3 style={{ fontWeight: 700, color: "#6b4226", fontSize: "1.2rem", margin: 0 }}>Offer Products</h3>
+                            <h3 style={{ fontWeight: 700, color: "#198754", fontSize: "1.2rem", margin: 0 }}>Offer Products</h3>
                             <button
                                 className="btn-close-themed"
                                 style={{ fontSize: "2rem", border: "none", background: "transparent", cursor: "pointer", color: "#6b4226", fontWeight: 700 }}
@@ -213,7 +213,7 @@ const OfferModal = () => {
                         <div style={{ padding: "18px 18px 0 18px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
                             <button
                                 className={`cat-btn ${selectedCat === "all" ? "active" : ""}`}
-                                style={{ borderRadius: 22, padding: "6px 16px", border: "1.3px solid #7a563a", background: selectedCat === "all" ? "#7a563a" : "#fff", color: selectedCat === "all" ? "#fff" : "#7a563a", fontWeight: 600, fontSize: ".95rem", transition: "all 0.3s", cursor: "pointer" }}
+                                style={{ borderRadius: 22, padding: "6px 16px", border: "1.3px solid #198754", background: selectedCat === "all" ? "#198754" : "#fff", color: selectedCat === "all" ? "#fff" : "#198754", fontWeight: 600, fontSize: ".95rem", transition: "all 0.3s", cursor: "pointer" }}
                                 onClick={() => handleCategory("all")}
                             >
                                 All
@@ -222,7 +222,7 @@ const OfferModal = () => {
                                 <button
                                     key={cat}
                                     className={`cat-btn ${selectedCat === cat ? "active" : ""}`}
-                                    style={{ borderRadius: 22, padding: "6px 16px", border: "1.3px solid #7a563a", background: selectedCat === cat ? "#7a563a" : "#fff", color: selectedCat === cat ? "#fff" : "#7a563a", fontWeight: 600, fontSize: ".95rem", transition: "all 0.3s", cursor: "pointer" }}
+                                    style={{ borderRadius: 22, padding: "6px 16px", border: "1.3px solid #198754", background: selectedCat === cat ? "#198754" : "#fff", color: selectedCat === cat ? "#fff" : "#198754", fontWeight: 600, fontSize: ".95rem", transition: "all 0.3s", cursor: "pointer" }}
                                     onClick={() => handleCategory(cat)}
                                 >
                                     {cat}
@@ -246,7 +246,7 @@ const OfferModal = () => {
                                     </div>
                                 ))
                                 : filtered.length === 0 ? (
-                                    <div style={{ textAlign: "center", gridColumn: "span 2", color: "#7a563a", fontWeight: 600 }}>
+                                    <div style={{ textAlign: "center", gridColumn: "span 2", color: "#198754", fontWeight: 600 }}>
                                         No offer products found.
                                     </div>
                                 ) : (
@@ -309,12 +309,12 @@ const OfferModal = () => {
                                                     />
                                                 </div>
                                                 <div className="product-content" style={{ textAlign: "center", padding: "10px 12px", flexGrow: 1 }}>
-                                                    <h5 className="product-title" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#5b3b25", marginBottom: 4 }}>
+                                                    <h5 className="product-title" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#198754", marginBottom: 4 }}>
                                                         {product.product_name.length > 15
                                                             ? product.product_name.substring(0, 15) + "..."
                                                             : product.product_name}
                                                     </h5>
-                                                    <p className="product-desc" style={{ color: "#777", fontSize: "0.85rem", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                                    <p className="product-desc" style={{ color: "#000000ff", fontSize: "0.85rem", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                                                         {product.product_description.length > 70
                                                             ? product.product_description.substring(0, 70) + "..."
                                                             : product.product_description}
@@ -350,7 +350,7 @@ const OfferModal = () => {
                                                         style={{
                                                             borderRadius: 20,
                                                             padding: "4px 10px",
-                                                            backgroundColor: "#7a563a",
+                                                            backgroundColor: "rgb(112,168,77)",
                                                             color: "#fff",
                                                             fontSize: "0.78rem",
                                                             fontWeight: 500,
@@ -370,7 +370,7 @@ const OfferModal = () => {
                                                             borderRadius: 20,
                                                             padding: "4px 10px",
                                                             backgroundColor: "#f1e6d4",
-                                                            color: "#7a563a",
+                                                            color: "#198754",
                                                             fontSize: "0.78rem",
                                                             fontWeight: 500,
                                                             border: "none",
@@ -405,7 +405,7 @@ const OfferModal = () => {
                                     borderRadius: 20,
                                     padding: "6px 18px",
                                     background: "#f1e6d4",
-                                    color: "#7a563a",
+                                    color: "#198754",
                                     border: "none",
                                     fontWeight: 600,
                                     fontSize: "0.92rem",
@@ -425,7 +425,7 @@ const OfferModal = () => {
                                     borderRadius: 20,
                                     padding: "6px 18px",
                                     background: "#f1e6d4",
-                                    color: "#7a563a",
+                                    color: "#198754",
                                     border: "none",
                                     fontWeight: 600,
                                     fontSize: "0.92rem",

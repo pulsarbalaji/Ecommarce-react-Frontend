@@ -184,11 +184,11 @@ const OrderTracking = () => {
 
       <style>{`
         :root {
-          --brown-dark: #7a563a;
-          --brown-darker: #68492f;
+          --brown-dark: rgb(112,168,77);
+          --brown-darker: #198754;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
+          --text-dark: rgb(112,168,77);
           --text-medium: #7a563a;
         }
 

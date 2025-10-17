@@ -38,7 +38,7 @@ const AppContent = () => {
   const location = useLocation();
 
   // Define pages where widgets should be hidden
-  const hideOnRoutes = ["/login", "/register", "/verification"];
+  const hideOnRoutes = ["/login", "/register", "/verification", "/checkout"];
   const shouldHide = hideOnRoutes.includes(location.pathname);
 
   return (

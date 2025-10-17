@@ -379,7 +379,7 @@ const Checkout = () => {
 
       <style>{`
         :root {
-          --brown-dark: #7a563a;
+          --brown-dark: #198754;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
           --error-color: #b3261e;

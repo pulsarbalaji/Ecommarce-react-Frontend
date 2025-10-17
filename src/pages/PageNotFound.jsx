@@ -21,10 +21,10 @@ const PageNotFound = () => {
 
       <style>{`
         :root {
-          --brown-dark: #7a563a;
+          --brown-dark: #198754;
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
+          --text-dark: #198754;
         }
 
         .bg-light {
