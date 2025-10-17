@@ -89,7 +89,7 @@ const Navbar = () => {
   style={{ gap: "8px" }}
 >
   <img
-    src="./Logo.jpeg"
+      src={`${process.env.PUBLIC_URL}/Logo.jpeg`}
     alt="Logo"
     style={{ height: "32px", width: "auto" }}
   />
