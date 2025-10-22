@@ -4,43 +4,40 @@ import api from "../utils/base_url";
 
 const AboutPage = () => {
   const [categories, setCategories] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
-  // Fetch categories
-  const fetchCategories = async (pageNum = 1) => {
-    try {
-      const res = await api.get(`/categories/?page=${pageNum}`);
-      if (res.data && res.data.data) {
-        if (pageNum === 1) {
-          setCategories(res.data.data);
-        } else {
-          setCategories((prev) => [...prev, ...res.data.data]);
-        }
-
-        // If fewer than 10 returned → no more pages
-        if (res.data.data.length < 10) {
-          setHasMore(false);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-    }
-  };
-
+  // Fetch categories once
   useEffect(() => {
-    fetchCategories(1); // load first page
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get(`/categories/`);
+        if (res.data && res.data.data) {
+          setCategories(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
   }, []);
+
+  // Duplicate categories for infinite loop effect
+  const repeatedCategories = [...categories, ...categories, ...categories];
 
   return (
     <>
       <Navbar />
       <div className="container my-3 py-3">
-        <h1 className="text-center" style={{ color: "#198754", fontWeight: 700 }}>
+        <h1
+          className="text-center"
+          style={{ color: "#198754", fontWeight: 700 }}
+        >
           About Us
         </h1>
         <hr />
-        <p className="lead text-center" style={{ color: "#000000ff", maxWidth: "700px", margin: "0 auto" }}>
+        <p
+          className="lead text-center"
+          style={{ color: "#000000ff", maxWidth: "700px", margin: "0 auto" }}
+        >
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum
           facere doloremque veritatis odit similique sequi. Odit amet fuga nam
           quam quasi facilis sed doloremque saepe sint perspiciatis explicabo
@@ -48,15 +45,18 @@ const AboutPage = () => {
           recusandae est mollitia esse fugit dolore laudantium.
         </p>
 
-        <h2 className="text-center py-4" style={{ color: "#198754", fontWeight: 600 }}>
+        <h2
+          className="text-center py-4"
+          style={{ color: "#198754", fontWeight: 600 }}
+        >
           Our Categories
         </h2>
 
-        {/* Horizontally scrollable grid for categories */}
-        <div className="categories-scroll-wrapper">
-          <div className="grid-container">
-            {categories.map((cat) => (
-              <div key={cat.id} className="product-card">
+        {/* Continuous marquee-like scroll */}
+        <div className="marquee-wrapper">
+          <div className="marquee">
+            {repeatedCategories.map((cat, index) => (
+              <div key={index} className="product-card">
                 <div className="img-wrapper">
                   <img
                     src={
@@ -69,118 +69,76 @@ const AboutPage = () => {
                 </div>
                 <div className="product-content">
                   <h5 className="product-title">{cat.category_name}</h5>
-                  <p className="product-desc">{cat.description || "No description"}</p>
+                  <p className="product-desc">
+                    {cat.description || "No description"}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Show More button */}
-        {hasMore && categories.length > 0 && (
-          <div className="text-center mt-3">
-            <button
-              className="btn-nav"
-              onClick={() => {
-                const nextPage = page + 1;
-                setPage(nextPage);
-                fetchCategories(nextPage);
-              }}
-            >
-              Show More
-            </button>
-          </div>
-        )}
       </div>
+
       <Footer />
 
-      {/* Theme and layout styles */}
       <style>{`
         h1, h2 {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .categories-scroll-wrapper {
-          overflow-x: auto;
-          padding-bottom: 12px;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
-          scrollbar-color: #198754 #f1e6d4;
-        }
-        /* Webkit scrollbar styling */
-        .categories-scroll-wrapper::-webkit-scrollbar {
-          height: 8px;
-        }
-        .categories-scroll-wrapper::-webkit-scrollbar-track {
-          background: #f1e6d4;
-          border-radius: 10px;
-        }
-        .categories-scroll-wrapper::-webkit-scrollbar-thumb {
-          background: #198754;
-          border-radius: 10px;
+        /* Marquee-style wrapper */
+        .marquee-wrapper {
+          position: relative;
+          overflow: hidden;
+          width: 100%;
+          background: transparent;
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
 
-        .grid-container {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 280px; /* Reduced width for medium size */
-  gap: 18px;
-  padding-left: 10px;
-}
-
-/* Responsive grid fallback */
-@media (max-width: 1024px) {
-  .grid-container {
-    grid-auto-columns: 260px;
-    gap: 16px;
-    padding-left: 8px;
-  }
-}
-@media (max-width: 768px) {
-  .grid-container {
-    grid-auto-columns: 240px;
-    gap: 14px;
-    padding-left: 6px;
-  }
-}
-@media (max-width: 576px) {
-  .grid-container {
-    grid-auto-columns: 220px;
-    gap: 12px;
-    padding-left: 4px;
-  }
-}
-
-
-        /* Hide vertical scrollbar if appears */
-        .grid-container::-webkit-scrollbar {
-          display: none;
+        /* The moving container */
+        .marquee {
+          display: flex;
+          gap: 18px;
+          animation: scrollLeft 10s linear infinite;
+          will-change: transform;
         }
 
-        /* Card styling matches Products theme */
+        @keyframes scrollLeft {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
         .product-card {
           background: #fff;
           border-radius: 12px;
-          border: 1px solid #f1e6d4;
+          border: 1px solid #cfead9;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          height: 340px;
+          width: 240px;
+          height: 300px;
+          flex-shrink: 0;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
-          flex-shrink: 0; /* Prevent shrinking */
         }
         .product-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 5px 14px rgba(122, 86, 58, 0.15);
+          transform: scale(1.03);
+          box-shadow: 0 5px 14px rgba(25, 135, 84, 0.15);
         }
+
         .img-wrapper {
-          background: #fffaf4;
-          height: 150px;
+          background: #e9f7ef;
+          height: 140px;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 10px;
         }
+
         .img-wrapper img {
           width: 80%;
           height: 100%;
@@ -188,76 +146,42 @@ const AboutPage = () => {
           transition: transform 0.3s ease;
         }
         .product-card:hover img {
-          transform: scale(1.05);
+          transform: scale(1.08);
         }
+
         .product-content {
           text-align: center;
           padding: 12px 10px;
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
         }
+
         .product-title {
           font-weight: 600;
           font-size: 1rem;
           color: #198754;
           margin-bottom: 6px;
         }
+
         .product-desc {
           color: #000000ff;
           font-size: 0.85rem;
-          flex-grow: 1;
           overflow: hidden;
           display: -webkit-box;
           -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
-          min-height: unset;
-          max-height: unset;
         }
 
-        .btn-nav {
-          border: none;
-          background: #198754;
-          color: #fff;
-          padding: 8px 20px;
-          border-radius: 25px;
-          margin: 0 4px;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        .btn-nav:hover {
-          background: #198754;
-        }
-        .btn-nav:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        /* Pause animation on hover */
+        .marquee-wrapper:hover .marquee {
+          animation-play-state: paused;
         }
 
-        /* Responsive grid fallback */
-        @media (max-width: 1024px) {
-          .categories-scroll-wrapper {
-            overflow-x: auto;
-          }
-          .grid-container {
-            grid-auto-columns: 300px;
-            gap: 16px;
-            padding-left: 8px;
-          }
-        }
         @media (max-width: 768px) {
-          .grid-container {
-            grid-auto-columns: 280px;
-            gap: 14px;
-            padding-left: 6px;
+          .product-card {
+            width: 200px;
+            height: 260px;
           }
-        }
-        @media (max-width: 576px) {
-          .grid-container {
-            grid-auto-columns: 260px;
-            gap: 12px;
-            padding-left: 4px;
+          .img-wrapper {
+            height: 120px;
           }
         }
       `}</style>
