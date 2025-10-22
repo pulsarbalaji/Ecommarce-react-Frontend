@@ -64,7 +64,6 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  // Skeleton Loader
   const Loading = () => (
     <div className="grid-container">
       {[...Array(6)].map((_, idx) => (
@@ -118,14 +117,28 @@ const Products = () => {
             product.offer_price;
 
           const altCardClass = idx % 2 === 0 ? "card-even" : "card-odd";
+          const outOfStock = !product.is_available || product.stock_quantity === 0;
+          const stockLow = product.stock_quantity <= 10 && product.stock_quantity > 0;
 
           return (
-            <div key={product.id} className={`product-card ${altCardClass}`}>
+            <div
+              key={product.id}
+              className={`product-card ${altCardClass}${outOfStock ? " out-of-stock" : ""}`}
+              style={outOfStock ? { opacity: 0.5, pointerEvents: "none" } : {}}
+            >
               {hasOffer && (
                 <span className="offer-badge">
                   {Math.round(product.offer_percentage)}% OFF
                 </span>
               )}
+
+              {outOfStock && (
+                <span className="stock-badge out-stock">Out of Stock</span>
+              )}
+              {!outOfStock && stockLow && (
+                <span className="stock-badge low-stock">Hurry! Only {product.stock_quantity} left</span>
+              )}
+
               <div className="img-wrapper">
                 <img
                   src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
@@ -161,10 +174,20 @@ const Products = () => {
                 </div>
               </div>
               <div className="product-btns">
-                <Link to={`/product/${product.id}`} className="btn-buy">
+                <Link
+                  to={outOfStock ? "#" : `/product/${product.id}`}
+                  className="btn-buy"
+                  tabIndex={outOfStock ? -1 : 0}
+                  style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
+                >
                   Buy Now
                 </Link>
-                <button className="btn-cart" onClick={() => addProduct(product)}>
+                <button
+                  className="btn-cart"
+                  onClick={() => addProduct(product)}
+                  disabled={outOfStock}
+                  style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
+                >
                   Add to Cart
                 </button>
               </div>
@@ -254,7 +277,6 @@ const Products = () => {
         {loading ? <Loading /> : <ShowProducts />}
       </div>
 
-      {/* Theme CSS */}
       <style>{`
         /* Grid */
         .grid-container {
@@ -267,7 +289,6 @@ const Products = () => {
         @media (min-width: 1024px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
         @media (min-width: 1400px) { .grid-container { grid-template-columns: repeat(6, 1fr); } }
 
-        /* Product Card */
         .product-card {
           position: relative;
           background: #fff9f3;
@@ -282,6 +303,7 @@ const Products = () => {
         }
         .product-card.card-even { background: #fff9f3; }
         .product-card.card-odd { background: #fffaf4; }
+        .product-card.out-of-stock { opacity: 0.5; pointer-events: none; }
 
         .offer-badge {
           position: absolute;
@@ -295,6 +317,27 @@ const Products = () => {
           border-radius: 6px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.15);
           z-index: 5;
+        }
+        .stock-badge {
+          position: absolute;
+          top: 10px;
+          left: 0;
+          background: #ffc107;
+          color: #7a563a;
+          padding: 4px 10px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 6px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.13);
+          z-index: 6;
+        }
+        .stock-badge.low-stock {
+          background: #ffc107;
+          color: #000000ff;
+        }
+        .stock-badge.out-stock {
+          background: #dc3545;
+          color: #fff;
         }
 
         .img-wrapper {
@@ -341,17 +384,28 @@ const Products = () => {
           font-size: 0.8rem;
           font-weight: 500;
           transition: all 0.3s ease;
-          
         }
         .btn-buy {
           background-color: rgb(112,168,77);
           color: #fff;
           text-decoration: none;
         }
-        .btn-buy:hover { background-color: #95b25a;text-decoration: none; }
+        .btn-buy:disabled, .btn-buy[disabled] {
+          background-color: #ddd !important;
+          color: #888 !important;
+          cursor: not-allowed !important;
+          pointer-events: none !important;
+        }
+        .btn-buy:hover { background-color: #95b25a; text-decoration: none; }
         .btn-cart {
           background-color: #f1e6d4;
           color: #198754;
+        }
+        .btn-cart:disabled, .btn-cart[disabled] {
+          background-color: #ddd !important;
+          color: #888 !important;
+          cursor: not-allowed !important;
+          pointer-events: none !important;
         }
         .btn-cart:hover { background-color: #e6d0b4; }
 
@@ -363,7 +417,6 @@ const Products = () => {
           padding: 6px 14px;
           font-weight: 500;
           transition: all 0.3s ease;
-          
         }
         .cat-btn.active, .cat-btn:hover { background-color: #198754; color: #fff; }
         .more-btn { background-color: #f1e6d4; color: #198754; }
@@ -382,7 +435,6 @@ const Products = () => {
           border-radius: 25px;
           font-size: 0.9rem;
           transition: all 0.3s ease;
-          
         }
         .btn-nav:hover { background: #95b25a; }
         .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -431,7 +483,6 @@ const Products = () => {
           cursor: pointer;
           transition: all 0.2s ease-in-out;
           z-index: 10;
-          
         }
         .modal-close-btn:hover { color: #198754; transform: scale(1.1); }
         .modal-title-themed { font-size: 1.1rem; font-weight: 600; color: #198754; text-align: center; margin-bottom: 10px; }

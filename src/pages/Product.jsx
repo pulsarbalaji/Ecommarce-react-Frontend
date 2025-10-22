@@ -24,7 +24,6 @@ const Product = () => {
     const fetchProduct = async () => {
       setLoading(true);
       setLoadingSimilar(true);
-
       try {
         const res = await api.get(`/productlist/${id}/`);
         const data = res.data?.data;
@@ -73,28 +72,37 @@ const Product = () => {
       product.offer_price > 0 &&
       product.offer_price !== product.price;
 
+    const outOfStock = !product.is_available || product.stock_quantity === 0;
+    const stockLow = product.stock_quantity <= 10 && product.stock_quantity > 0;
+
     return (
       <div className="container my-5 py-2">
         <div className="row align-items-center">
           <div className="col-md-6 col-sm-12 py-3 text-center">
-            <div className="product-image-wrapper">
+            <div className="product-image-wrapper" style={{ position: "relative" }}>
               <img
                 className="img-fluid"
                 src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
                 alt={product.product_name}
                 style={{ objectFit: "contain", maxHeight: "350px" }}
               />
+              {outOfStock && (
+                <span className="stock-badge out-stock">Out of Stock</span>
+              )}
+              {!outOfStock && stockLow && (
+                <span className="stock-badge low-stock">
+                  Hurry! Only {product.stock_quantity} left
+                </span>
+              )}
             </div>
           </div>
           <div className="col-md-6 py-3">
             <h6 className="text-uppercase" style={{color:"#000000ff"}} > {product.category_name}</h6>
             <h3 className="fw-bold text-success">{product.product_name}</h3>
-
             <p className="mb-2" style={{color:"#000000ff"}}>
               Rating: {product.average_rating}{" "}
               <i className="fa fa-star text-warning"></i>
             </p>
-
             <h4 className="text-success my-2">
               {hasOffer ? (
                 <>
@@ -107,19 +115,24 @@ const Product = () => {
                 `₹${parseFloat(product.price).toLocaleString()}`
               )}
             </h4>
-
             <p className="small" style={{ minHeight: "70px", color:"#000000ff"}}>
               {product.product_description}
             </p>
-
             <div className="d-flex flex-wrap">
               <button
                 className="btn-green-outline me-2 mb-2"
                 onClick={() => addProduct(product)}
+                disabled={outOfStock}
+                style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
               >
                 Add to Cart
               </button>
-              <Link to="/cart" className="btn-green mb-2">
+              <Link
+                to="/cart"
+                className="btn-green mb-2"
+                tabIndex={outOfStock ? -1 : 0}
+                style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
+              >
                 Go to Cart
               </Link>
             </div>
@@ -148,17 +161,34 @@ const Product = () => {
             item.offer_price !== null &&
             Number(item.offer_price) > 0 &&
             item.offer_price !== item.price;
+
+          const outOfStock = !item.is_available || item.stock_quantity === 0;
+          const stockLow = item.stock_quantity <= 10 && item.stock_quantity > 0;
+
           return (
             <div
               key={item.id}
               className="card text-center border-0 shadow-sm rounded product-card-theme"
+              style={
+                outOfStock
+                  ? { opacity: 0.5, pointerEvents: "none" }
+                  : {}
+              }
             >
               {hasOffer && (
                 <div className="offer-badge">
                   {Math.round(item.offer_percentage)}% OFF
                 </div>
               )}
-              <div className="p-2 bg-light rounded">
+              {outOfStock && (
+                <span className="stock-badge out-stock">Out of Stock</span>
+              )}
+              {!outOfStock && stockLow && (
+                <span className="stock-badge low-stock">
+                  Hurry! Only {item.stock_quantity} left
+                </span>
+              )}
+              <div className="p-2 bg-light rounded position-relative">
                 <img
                   className="card-img-top"
                   src={`${process.env.REACT_APP_API_URL}${item.product_image}`}
@@ -187,14 +217,18 @@ const Product = () => {
                 </p>
                 <div className="d-flex justify-content-center flex-wrap">
                   <Link
-                    to={`/product/${item.id}`}
+                    to={outOfStock ? "#" : `/product/${item.id}`}
                     className="btn-green-outline btn-sm me-2 mb-2"
+                    tabIndex={outOfStock ? -1 : 0}
+                    style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
                   >
                     View
                   </Link>
                   <button
                     className="btn-green btn-sm mb-2"
                     onClick={() => addProduct(item)}
+                    disabled={outOfStock}
+                    style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
                   >
                     +
                   </button>
@@ -224,8 +258,43 @@ const Product = () => {
           border-radius: 12px;
           padding: 20px;
           box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+          position: relative;
         }
+        .stock-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 115px;
+  background: #ffc107;
+  color: #7a563a;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+  z-index: 9;
+}
 
+        .stock-badge.low-stock {
+          background: #ffc107;
+          color: #000000ff;
+        }
+        .stock-badge.out-stock {
+          background: #dc3545;
+          color: #fff;
+        }
+        .offer-badge {
+          position: absolute;
+          top: 10px;
+          right: 0;
+          background: linear-gradient(135deg, #ff4b2b, #ff416c);
+          color: #fff;
+          padding: 4px 10px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 6px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+          z-index: 5;
+        }
         .scroll-container {
           display: flex;
           overflow-x: auto;
@@ -245,7 +314,6 @@ const Product = () => {
           background: #198754;
           border-radius: 10px;
         }
-
         .product-card-theme {
           flex: 0 0 160px;
           background: #fff9f3;
@@ -253,26 +321,12 @@ const Product = () => {
           border: 1.5px solid #e6d2b5;
           box-shadow: 0 2px 7px rgba(0,0,0,0.1);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
+          position: relative;
         }
         .product-card-theme:hover {
           transform: scale(1.05);
           box-shadow: 0 7px 18px rgba(112,168,77,0.2);
         }
-
-        .offer-badge {
-          position: absolute;
-          top: 10px;
-          right: 0;
-          background: linear-gradient(135deg, #ff4b2b, #ff416c);
-          color: #fff;
-          padding: 4px 10px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border-radius: 6px;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-          z-index: 5;
-        }
-
         .btn-green {
           background-color: rgb(112,168,77);
           color: #fff !important;
@@ -283,11 +337,16 @@ const Product = () => {
           transition: all 0.3s ease;
           text-decoration: none;
         }
+        .btn-green:disabled, .btn-green[disabled] {
+          background-color: #ddd !important;
+          color: #888 !important;
+          cursor: not-allowed !important;
+          pointer-events: none !important;
+        }
         .btn-green:hover {
           background-color: #95b25a;
           text-decoration: none;
         }
-
         .btn-green-outline {
           background-color: transparent;
           color: #198754 !important;
@@ -298,12 +357,18 @@ const Product = () => {
           transition: all 0.3s ease;
           text-decoration: none;
         }
+        .btn-green-outline:disabled {
+          background-color: #fff;
+          color: #888 !important;
+          border-color: #ccc !important;
+          cursor: not-allowed !important;
+          pointer-events: none !important;
+        }
         .btn-green-outline:hover {
           background-color: #198754;
           color: #fff !important;
           text-decoration: none;
         }
-
         .text-truncate {
           white-space: nowrap;
           overflow: hidden;
