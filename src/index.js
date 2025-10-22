@@ -32,13 +32,14 @@ import OrderHistory from "./pages/OrderHistory";
 import WhatsAppWidget from "./pages/WhatsAppWidget";
 import InstagramWidget from "./pages/Instagramwidget";
 import OfferModal from "./components/OfferModal";
+import PasswordReset from "./pages/PasswordReset";
+import PasswordResetConfirm from "./pages/PasswordResetConfirm";
 
-// ✅ Create a wrapper component so we can use useLocation()
+
 const AppContent = () => {
   const location = useLocation();
 
-  // Define pages where widgets should be hidden
-  const hideOnRoutes = ["/login", "/register", "/verification", "/checkout"];
+  const hideOnRoutes = ["/login", "/register", "/verification", "/checkout","/passwordreset","/reset-password"];
   const shouldHide = hideOnRoutes.includes(location.pathname);
 
   return (
@@ -70,6 +71,8 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verification" element={<Verification />} />
+        <Route path="/passwordreset" element={<PasswordReset />} />
+        <Route path="/reset-password/:uid/:token" element={<PasswordResetConfirm />} />
 
         {/* Fallback */}
         <Route path="*" element={<PageNotFound />} />

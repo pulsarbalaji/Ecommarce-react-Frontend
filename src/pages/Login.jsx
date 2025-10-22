@@ -144,6 +144,9 @@ const Login = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
+             <div className="forgot-password">
+              <Link to="/passwordreset">Forgot Password?</Link>
+            </div>
 
             <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
@@ -218,6 +221,16 @@ const Login = () => {
           justify-content: center;
           gap: 20px;
           margin-bottom: 30px;
+        }
+        .forgot-password {
+          text-align: right;
+          margin-top: -15px;
+        }
+        .forgot-password a {
+          color: #198754;
+          font-weight: 600;
+          text-decoration: underline;
+          font-size: 0.95rem;
         }
         .login-method-toggle button {
           width: 54px;
