@@ -195,7 +195,7 @@ const Login = () => {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: #f4fff5;
+          background: #fffaf4;
           padding: 20px;
         }
         .login-card {
@@ -211,7 +211,7 @@ const Login = () => {
           font-size: 1.8rem;
           margin-bottom: 30px;
           font-weight: 700;
-          color: #198754;
+          color: #000000ff;
         }
         .login-method-toggle {
           display: flex;
@@ -252,7 +252,7 @@ const Login = () => {
           border-radius: 15px;
           border: 1.5px solid #cde6ce;
           background: #f9fff9;
-          color: #198754;
+          color: #000000ff;
           font-weight: 600;
           outline: none;
         }
@@ -262,7 +262,7 @@ const Login = () => {
           top: 50%;
           transform: translateY(-50%);
           pointer-events: none;
-          color: #198754;
+          color: #000000ff;
           font-weight: 600;
           transition: 0.3s;
           display: flex;
@@ -273,7 +273,7 @@ const Login = () => {
         .floating-input input:not(:placeholder-shown) + label {
           top: 5px;
           font-size: 0.85rem;
-          color: rgb(112,168,77);
+          color: #198754;
           background: #f9fff9;
           padding: 0 8px;
           border-radius: 8px;
@@ -287,7 +287,7 @@ const Login = () => {
           transform: translateY(-50%);
           border: none;
           background: transparent;
-          color: #198754;
+          color: #000000ff;
           cursor: pointer;
           font-size: 1.25rem;
         }
@@ -333,11 +333,11 @@ const Login = () => {
         }
         .register-prompt {
           margin-top: 40px;
-          color: #198754;
+          color: #000000ff;
           font-weight: 600;
         }
         .register-link {
-          color: rgb(112,168,77);
+          color: #198754;
           font-weight: 700;
           text-decoration: underline;
         }

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import { FaEnvelope, FaMobileAlt, FaLock } from "react-icons/fa";
+import { FaEnvelope, FaMobileAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { auth, googleProvider } from "../firebase";
@@ -14,6 +15,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -21,7 +23,7 @@ const Register = () => {
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   // Validate password (min 6 characters)
   const isValidPassword = (password) =>
-  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/.test(password);
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/.test(password);
   // Validate phone (10 digits)
   const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
 
@@ -29,10 +31,10 @@ const Register = () => {
     e.preventDefault();
     if (!isValidEmail(email)) return toast.error("Please enter a valid email");
     if (!isValidPassword(password)) {
-  return toast.error(
-    "Password must have at least 1 uppercase letter, 1 number, 1 special character, and minimum 6 characters"
-  );
-}
+      return toast.error(
+        "Password must have at least 1 uppercase letter, 1 number, 1 special character, and minimum 6 characters"
+      );
+    }
 
     setLoading(true);
     try {
@@ -134,18 +136,26 @@ const Register = () => {
               </label>
             </div>
 
-            <div className="floating-input">
-              <input
-                type="password"
-                placeholder=" "
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <label>
-                <FaLock /> Password
-              </label>
-            </div>
+            <div className="floating-input password-input">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder=" "
+                            value={password}
+                            required
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                          <label>
+                            <FaLock /> Password
+                          </label>
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+            
 
             <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
               {loading ? "Please wait..." : "Register"}
@@ -218,7 +228,7 @@ const Register = () => {
           font-size: 2rem;
           font-weight: 700;
           margin-bottom: 30px;
-          color: #198754;
+          color: #000000ff;
         }
         .register-method-toggle {
           display: flex;
@@ -265,7 +275,7 @@ const Register = () => {
           background-color: #fffaf4;
           font-weight: 600;
           font-size: 1.1rem;
-          color: #198754;
+          color: #000000ff;
           padding: 14px 14px 14px 42px;
           box-shadow: inset 0 0 6px rgba(245, 245, 245, 0.5);
           outline: none;
@@ -285,7 +295,7 @@ const Register = () => {
           transform: translateY(-50%);
           pointer-events: none;
           font-weight: 600;
-          color: #198754;
+          color: #000000ff;
           font-size: 1rem;
           display: flex;
           align-items: center;
@@ -297,7 +307,7 @@ const Register = () => {
         .floating-input input:not(:placeholder-shown) + label {
           top: 5px;
           font-size: 0.85rem;
-          color: rgb(112,168,77);
+          color: #198754;
           font-weight: 700;
           background: #fffaf4;
           padding: 0 8px;
@@ -350,17 +360,29 @@ const Register = () => {
           margin-top: 38px;
           text-align: center;
           font-weight: 600;
-          color: #198754;
+          color: #000000ff;
           font-size: 1rem;
         }
         .login-prompt a {
-          color: rgb(112,168,77);
+          color: #198754;
           font-weight: 700;
           text-decoration: underline;
           transition: color 0.3s ease;
         }
         .login-prompt a:hover {
           color: #198754;
+        }
+        .password-input { position: relative; }
+          .password-toggle {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          border: none;
+          background: transparent;
+          color: #000000ff;
+          cursor: pointer;
+          font-size: 1.25rem;
         }
         @media (max-width: 768px) {
           .register-card{
