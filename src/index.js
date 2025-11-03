@@ -34,6 +34,7 @@ import InstagramWidget from "./pages/Instagramwidget";
 import OfferModal from "./components/OfferModal";
 import PasswordReset from "./pages/PasswordReset";
 import PasswordResetConfirm from "./pages/PasswordResetConfirm";
+import FavoriteProducts from "./pages/Favorites";
 
 
 const AppContent = () => {
@@ -66,6 +67,7 @@ const AppContent = () => {
         <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
         <Route path="/order-tracking/:orderNumber" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
         <Route path="/orderhistory" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+        <Route path="/favoriteProducts" element={<ProtectedRoute><FavoriteProducts /></ProtectedRoute>} />
 
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />

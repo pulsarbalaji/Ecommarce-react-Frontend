@@ -220,6 +220,15 @@ const Navbar = () => {
                           Order History
                         </button>
                         <button
+                          className="dropdown-item-themed text-start fw-semibold"
+                          onClick={() => {
+                            navigate("/favoriteProducts");
+                            setOpenMenu(false);
+                          }}
+                        >
+                          Favorite Products
+                        </button>
+                        <button
                           className="dropdown-item-themed dropdown-item-danger text-start fw-semibold"
                           onClick={() => {
                             handleLogout();
