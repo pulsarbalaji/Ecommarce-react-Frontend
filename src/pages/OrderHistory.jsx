@@ -32,6 +32,23 @@ const OrderHistory = () => {
     [user]
   );
 
+  const statusClasses = {
+    pending: "bg-warning text-dark",
+    order_confirmed: "bg-info text-dark",
+    shipped: "bg-primary",
+    delivered: "bg-success",
+    cancelled: "bg-danger",
+    returned: "bg-secondary",
+  };
+
+  const formatStatus = (status) => {
+    if (!status) return "";
+    return status
+      .replace(/_/g, " ")       // replace underscores with spaces
+      .replace(/\b\w/g, (c) => c.toUpperCase());  // capitalize each word
+  };
+
+
   useEffect(() => {
     fetchOrders(1);
   }, [fetchOrders]);
@@ -57,34 +74,51 @@ const OrderHistory = () => {
   const ShowOrders = () => (
     <>
       <div className="grid-container">
-        {orders.map((order, idx) => (
-          <div key={idx} className="card shadow-sm h-100 text-center p-3 rounded-theme">
-            <h5 className="mb-2 text-theme-dark">Order #{order.order_number}</h5>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className={`badge ${order.status === "delivered"
-                    ? "bg-success"
-                    : order.status === "pending"
-                      ? "bg-warning text-dark"
-                      : "bg-secondary"
-                  }`}
-              >
-                {order.status}
-              </span>
-            </p>
-            <p className="lead mb-2 text-theme-medium">Total: ₹{order.total_amount.toLocaleString()}</p>
-            <div className="mt-auto">
-              <Link
-                to={`/order-tracking/${order.order_number}`}>
-                <button type="button" className="btn-themed">
+        {orders.map((order, idx) => {
+          const firstItem = order.items?.[0];
+          const imageUrl = firstItem?.product_image
+            ? `${process.env.REACT_APP_API_URL}${firstItem.product_image}`
+            : "/no-image.png";
+
+          return (
+            <div key={idx} className="card shadow-sm text-center p-3 rounded-theme">
+              <div className="image-container mb-3">
+                <img
+                  src={imageUrl}
+                  alt={firstItem?.product_name || "Product"}
+                  className="img-fluid product-image"
+                />
+              </div>
+              <h6 className="mb-1 text-theme-dark fw-bold">
+                {firstItem?.product_name
+                  ? ` ${firstItem.product_name}`
+                  : "Products included"}
+              </h6>
+
+              <p className="small mb-1">
+                <strong>Status:</strong>{" "}
+                <span className={`badge ${statusClasses[order.status] || "bg-secondary"}`}>
+                  {formatStatus(order.status)}
+                </span>
+              </p>
+
+
+              <p className="text-theme-medium small mb-2">
+                Order #{order.order_number}
+              </p>
+
+              <p className="fw-bold text-theme-dark mb-3">
+                ₹{order.total_amount.toLocaleString()}
+              </p>
+
+              <Link to={`/order-tracking/${order.order_number}`}>
+                <button type="button" className="btn-themed w-100">
                   View Details
                 </button>
               </Link>
-
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination */}
@@ -96,9 +130,6 @@ const OrderHistory = () => {
         >
           Prev
         </button>
-        {/* <span className="btn btn-light m-1 disabled text-theme-dark">
-          Page {page} of {totalPages}
-        </span> */}
         <button
           className="btn-nav"
           disabled={page === totalPages}
@@ -114,7 +145,7 @@ const OrderHistory = () => {
     <>
       <Navbar />
       <div className="container my-3 py-3">
-        <h2 className="display-5 text-center text-theme-dark">My Order History</h2>
+        <h2 className="display-6 text-center text-theme-dark">My Order History</h2>
         <hr />
         {loading ? <Loading /> : <ShowOrders />}
       </div>
@@ -122,9 +153,9 @@ const OrderHistory = () => {
 
       <style>{`
         :root {
-          --brown-dark: rgb(112,168,77);
-          --brown-darker: #198754;
-          --brown-light: #f1e6d4;
+          --green-dark: rgb(112,168,77);
+          --green-darker: #198754;
+          --green-light: #ffffffff;
           --cream-bg: #fffaf4;
           --text-dark: #000000ff;
           --text-medium: #000000ff;
@@ -134,51 +165,91 @@ const OrderHistory = () => {
           background-color: var(--cream-bg);
         }
 
+        /* === GRID LAYOUT === */
         .grid-container {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 16px;
         }
 
         @media (max-width: 1200px) {
-          .grid-container {
-            grid-template-columns: repeat(3, 1fr);
-          }
+          .grid-container { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (max-width: 992px) {
+          .grid-container { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (max-width: 768px) {
-          .grid-container {
-            grid-template-columns: repeat(2, 1fr);
-          }
+          .grid-container { grid-template-columns: repeat(2, 1fr); }
         }
 
+        @media (max-width: 480px) {
+          .grid-container { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .card {
+          background-color: #ffffff;
+          border: 1px solid #e5e5e5;
+          border-radius: 12px;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+          transform: scale(1.03);
+          box-shadow: 0 6px 15px rgba(112,168,77,0.25);
+        }
+
+        .image-container {
+          width: 100%;
+          height: 130px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: var(--green-light);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .product-image {
+          max-height: 100%;
+          width: auto;
+          object-fit: contain;
+        }
+
+        /* === BUTTONS === */
         .btn-nav {
-  border: none;
-  background: rgb(112,168,77);
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 25px;
-  margin: 0 4px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
+          border: none;
+          background: var(--green-dark);
+          color: #fff;
+          padding: 6px 14px;
+          border-radius: 25px;
+          margin: 0 4px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+        }
 
-.btn-nav:hover {
-  background: #198754;
-}
+        .btn-nav:hover {
+          background: var(--green-darker);
+        }
 
-        @media (max-width: 576px) {
-          .grid-container {
-            grid-template-columns: 1fr;
-          }
+        .btn-themed {
+          background-color: var(--green-dark);
+          color: #fff !important;
+          border-radius: 25px;
+          font-weight: 600;
+          padding: 6px 12px;
+          border: none;
+          transition: background-color 0.3s ease;
+          cursor: pointer;
+        }
+
+        .btn-themed:hover {
+          background-color: var(--green-darker);
         }
 
         .rounded-theme {
           border-radius: 12px !important;
-        }
-
-        .shadow-sm {
-          box-shadow: 0 4px 8px rgba(122, 86, 58, 0.1) !important;
         }
 
         .text-theme-dark {
@@ -188,92 +259,6 @@ const OrderHistory = () => {
         .text-theme-medium {
           color: var(--text-medium);
         }
-
-        .btn-themed {
-          background-color: var(--brown-dark);
-          color: #fff !important;
-          border-radius: 25px;
-          font-weight: 600;
-          padding: 5px 15px;
-          border: none;
-          transition: background-color 0.3s ease;
-          cursor: pointer;
-          box-shadow: 0 2px 6px rgba(122, 86, 58, 0.15);
-          display: inline-block;
-          font-size: 0.875rem;
-        }
-
-        .btn-themed:hover,
-        .btn-themed:focus {
-          background-color: var(--brown-darker);
-          outline: none;
-          text-decoration: none;
-          box-shadow: 0 0 8px rgba(122, 86, 58, 0.4);
-        }
-
-        .btn-outline-themed {
-          color: var(--brown-dark);
-          border-color: var(--brown-dark);
-          border-width: 2px;
-          border-radius: 25px;
-          font-weight: 600;
-          padding: 5px 15px;
-          transition: all 0.3s ease;
-          background-color: transparent;
-        }
-
-        .btn-outline-themed:hover {
-          background-color: var(--brown-dark);
-          color: white;
-          border-color: var(--brown-dark);
-          text-decoration: none;
-        }
-
-        .placeholder-card {
-          background-color: var(--cream-bg);
-          border-radius: 12px;
-        }
-
-        .placeholder {
-          border-radius: 5px;
-          background: linear-gradient(90deg, #f1e6d4 25%, #e8d0b9 37%, #f1e6d4 63%);
-          animation: placeholderShimmer 1.4s infinite linear;
-        }
-
-        @keyframes placeholderShimmer {
-          0% {
-            background-position: -200px 0;
-          }
-          100% {
-            background-position: 200px 0;
-          }
-        }
-          .grid-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-@media (max-width: 1200px) {
-  .grid-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Change here - show 2 columns on smaller mobile screens */
-@media (max-width: 576px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-
       `}</style>
     </>
   );

@@ -26,7 +26,7 @@ const OrderConfirmation = () => {
   if (loading) {
     return (
       <div className="container py-5 text-center">
-        <h4 style={{ color: "#5b3b25" }}>Loading order details...</h4>
+        <h4 style={{ color: "#198754" }}>Loading order details...</h4>
       </div>
     );
   }
@@ -34,7 +34,7 @@ const OrderConfirmation = () => {
   if (!order) {
     return (
       <div className="container py-5 text-center">
-        <h4 style={{ color: "#5b3b25" }}>Order not found!</h4>
+        <h4 style={{ color: "#198754" }}>Order not found!</h4>
         <Link to="/" className="btn btn-outline-themed mt-3">
           Go to Home
         </Link>
@@ -49,7 +49,7 @@ const OrderConfirmation = () => {
         <div className="row justify-content-center">
           <div className="col-md-10">
             <div className="card rounded-theme shadow-theme">
-              <div className="card-header text-white text-center rounded-top-theme" style={{ backgroundColor: "#7a563a", color: "#fff" }}>
+              <div className="card-header text-white text-center rounded-top-theme" style={{ backgroundColor: "#198754", color: "#fff" }}>
 
                 <h4>Order Confirmed!</h4>
               </div>
@@ -124,13 +124,13 @@ const OrderConfirmation = () => {
 
       <style>{`
         :root {
-          --brown-dark: #7a563a;
-          --brown-darker: #68492f;
+          --brown-dark: #198754;
+          --brown-darker:  rgb(112,168,77);
           --brown-light: #f1e6d4;
           --cream-bg: #fffaf4;
-          --text-dark: #5b3b25;
-          --text-medium: #7a563a;
-          --text-muted: #777;
+          --text-dark: #000000ff;
+          --text-medium: #000000ff;
+          --text-muted:  rgb(112,168,77);
         }
 
         body, html, .container {

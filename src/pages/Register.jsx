@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { auth, googleProvider } from "../firebase";
 import { signInWithPopup } from "firebase/auth";
 import api from "../utils/base_url";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const [registerMethod, setRegisterMethod] = useState("email");
@@ -16,6 +17,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
 
   const navigate = useNavigate();
 
@@ -81,6 +83,13 @@ const Register = () => {
       const res = await api.post("google/", { token: idToken });
       sessionStorage.setItem("access_token", res.data.access);
       sessionStorage.setItem("refresh_token", res.data.refresh);
+
+      login({
+        access: res.data.access,
+        refresh: res.data.refresh,
+        user: res.data.user,
+      });
+      
       toast.success("Google registration successful!");
       navigate("/dashboard");
     } catch (error) {

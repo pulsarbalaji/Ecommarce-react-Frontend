@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import api from "../utils/base_url";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const ProfileUpdateForm = () => {
   const { user } = useContext(AuthContext);
@@ -66,10 +67,10 @@ const ProfileUpdateForm = () => {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
-      alert("Profile saved successfully!");
+      toast.success("Profile saved successfully!");
     } catch (err) {
       console.error(err);
-      alert("Error saving profile. Please try again.");
+      toast.error("Error saving profile. Please try again.");
     }
   };
 

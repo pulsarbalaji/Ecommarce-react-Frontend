@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import { Link, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addCart } from "../redux/action";
 import { Footer, Navbar } from "../components";
 import api from "../utils/base_url";
@@ -13,13 +13,33 @@ const Product = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [stocks, setStocks] = useState({});
   const dispatch = useDispatch();
+  const cart = useSelector((s) => s.handleCart || []); // read current cart from redux
 
-  const addProduct = (product) => {
-    dispatch(addCart(product));
+  // Add to cart with stock checks
+  const addProduct = (prod) => {
+    const productId = prod.id;
+    const availableStock = Number(stocks[productId] ?? prod.stock_quantity ?? 0);
+
+    if (availableStock <= 0) {
+      toast.error(`${prod.product_name} is out of stock`);
+      return;
+    }
+
+    const existingItem = cart.find((i) => Number(i.id) === Number(productId));
+    const currentQty = existingItem ? Number(existingItem.qty) : 0;
+
+    if (currentQty >= availableStock) {
+      toast.error(`Only ${availableStock} in stock for ${prod.product_name}`);
+      return;
+    }
+
+    dispatch(addCart(prod));
     toast.success("Added to cart");
   };
 
+  // Fetch main product and similar products
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
@@ -34,6 +54,9 @@ const Product = () => {
           const resSimilar = await api.get(`/productfilter/${data.category}/?page=1`);
           const dataSimilar = resSimilar.data?.data || [];
           setSimilarProducts(dataSimilar.filter((item) => item.id !== data.id));
+        } else {
+          setSimilarProducts([]);
+          setLoadingSimilar(false);
         }
         setLoadingSimilar(false);
       } catch (error) {
@@ -43,8 +66,51 @@ const Product = () => {
       }
     };
 
-    fetchProduct();
+    if (id) fetchProduct();
   }, [id]);
+
+  // Fetch stock for main product + similar products
+  useEffect(() => {
+    const getStock = async () => {
+      try {
+        const stockData = {};
+
+        if (product?.id) {
+          // leading slash to be safe — adjust if your api base expects otherwise
+          const resMain = await api.get(`/stock/?product_id=${product.id}`);
+          stockData[product.id] = Number(resMain.data?.stock ?? product.stock_quantity ?? 0);
+        }
+
+        // fetch stocks in parallel for similar products
+        const similarIds = similarProducts.map((p) => p.id);
+        if (similarIds.length > 0) {
+          const promises = similarIds.map((pid) =>
+            api.get(`/stock/?product_id=${pid}`).then((r) => ({
+              id: pid,
+              stock: Number(r.data?.stock ?? 0),
+            })).catch((err) => {
+              console.error(`Stock fetch error for ${pid}`, err);
+              return { id: pid, stock: Number(similarProducts.find(sp => sp.id === pid)?.stock_quantity ?? 0) };
+            })
+          );
+
+          const results = await Promise.all(promises);
+          results.forEach((r) => {
+            stockData[r.id] = r.stock;
+          });
+        }
+
+        setStocks((prev) => ({ ...prev, ...stockData }));
+      } catch (error) {
+        console.error("Stock fetch error:", error);
+      }
+    };
+
+    // Only run when we have product or similar products
+    if (product || (similarProducts && similarProducts.length > 0)) {
+      getStock();
+    }
+  }, [product, similarProducts]);
 
   const LoadingProduct = () => (
     <div className="container my-5 py-2">
@@ -72,8 +138,9 @@ const Product = () => {
       product.offer_price > 0 &&
       product.offer_price !== product.price;
 
-    const outOfStock = !product.is_available || product.stock_quantity === 0;
-    const stockLow = product.stock_quantity <= 10 && product.stock_quantity > 0;
+    const available = Number(stocks[product.id] ?? product.stock_quantity ?? 0);
+    const outOfStock = !product.is_available || available === 0;
+    const stockLow = available <= 10 && available > 0;
 
     return (
       <div className="container my-5 py-2">
@@ -91,7 +158,7 @@ const Product = () => {
               )}
               {!outOfStock && stockLow && (
                 <span className="stock-badge low-stock">
-                  Hurry! Only {product.stock_quantity} left
+                  Hurry! Only {available} left
                 </span>
               )}
             </div>
@@ -117,6 +184,9 @@ const Product = () => {
             </h4>
             <p className="small" style={{ minHeight: "70px", color:"#000000ff"}}>
               {product.product_description}
+            </p>
+            <p className="small mb-2" style={{ color: "#000000ff" }}>
+             
             </p>
             <div className="d-flex flex-wrap">
               <button
@@ -162,8 +232,9 @@ const Product = () => {
             Number(item.offer_price) > 0 &&
             item.offer_price !== item.price;
 
-          const outOfStock = !item.is_available || item.stock_quantity === 0;
-          const stockLow = item.stock_quantity <= 10 && item.stock_quantity > 0;
+          const available = Number(stocks[item.id] ?? item.stock_quantity ?? 0);
+          const outOfStock = !item.is_available || available === 0;
+          const stockLow = available <= 10 && available > 0;
 
           return (
             <div
@@ -185,7 +256,7 @@ const Product = () => {
               )}
               {!outOfStock && stockLow && (
                 <span className="stock-badge low-stock">
-                  Hurry! Only {item.stock_quantity} left
+                  Hurry! Only {available} left
                 </span>
               )}
               <div className="p-2 bg-light rounded position-relative">
@@ -215,6 +286,11 @@ const Product = () => {
                     `₹${parseFloat(item.price).toLocaleString()}`
                   )}
                 </p>
+
+                <p className="small mb-1" style={{ color: "#000000ff" }}>
+                  
+                </p>
+
                 <div className="d-flex justify-content-center flex-wrap">
                   <Link
                     to={outOfStock ? "#" : `/product/${item.id}`}
@@ -261,19 +337,18 @@ const Product = () => {
           position: relative;
         }
         .stock-badge {
-  position: absolute;
-  left: 10px;
-  bottom: 115px;
-  background: #ffc107;
-  color: #7a563a;
-  padding: 4px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.14);
-  z-index: 9;
-}
-
+          position: absolute;
+          left: 10px;
+          bottom: 115px;
+          background: #ffc107;
+          color: #7a563a;
+          padding: 4px 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          border-radius: 6px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+          z-index: 9;
+        }
         .stock-badge.low-stock {
           background: #ffc107;
           color: #000000ff;

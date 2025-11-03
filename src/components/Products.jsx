@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { addCart } from "../redux/action";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -15,6 +16,8 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,32 +25,81 @@ const Products = () => {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const state = useSelector((state) => state.handleCart);
 
   const addProduct = (product) => {
-    if (user) {
-      dispatch(addCart(product));
-      toast.success("Added to cart");
-    } else {
+    if (!user) {
       toast.error("Please login first!");
       navigate("/login");
+      return;
+    }
+
+    if (!product.is_available || product.stock_quantity === 0) {
+      toast.error("This product is out of stock!");
+      return;
+    }
+
+    // Check current quantity of this product in cart (from Redux)
+    const cartItem = state.find((item) => item.id === product.id);
+    const currentQty = cartItem ? cartItem.qty : 0;
+
+    if (currentQty >= product.stock_quantity) {
+      toast.error(`Only ${product.stock_quantity} in stock`);
+      return;
+    }
+
+    dispatch(addCart(product));
+    toast.success("Added to cart");
+  };
+
+  const toggleFavorite = async (productId) => {
+    if (!user) {
+      toast.error("Please login first!");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await api.post("favorites/toggle/", { product_id: productId, auth_id: user.id });
+      const isFav = res.data.favorite;
+
+      setFavorites((prev) =>
+        isFav ? [...prev, productId] : prev.filter((id) => id !== productId)
+      );
+      fetchFavorites();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed, try again");
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchFavorites = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const res = await api.get(`favorites/ids/?auth_id=${user.id}`);
+      setFavorites(res.data.favorites || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [user]);
+
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await api.get("categorylist/");
       setCategories(res.data.data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
 
-  const fetchProducts = async (pageNo = 1, categoryId = null) => {
+  const fetchProducts = useCallback(async (pageNo = 1, categoryId = null) => {
     setLoading(true);
     try {
       const url = categoryId
         ? `productfilter/${categoryId}/?page=${pageNo}`
         : `productlist/?page=${pageNo}`;
+
       const res = await api.get(url);
       setProducts(res.data.data || []);
       setPage(res.data.current_page || 1);
@@ -57,12 +109,14 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCategories();
     fetchProducts();
-  }, []);
+    fetchFavorites();
+  }, [fetchCategories, fetchProducts, fetchFavorites]);
+
 
   const Loading = () => (
     <div className="grid-container">
@@ -151,11 +205,38 @@ const Products = () => {
                     ? product.product_name.substring(0, 15) + "..."
                     : product.product_name}
                 </h5>
+                <motion.div
+                  onClick={() => toggleFavorite(product.id)}
+                  initial={{ scale: 1 }}
+                  animate={{ scale: favorites.includes(product.id) ? 1.3 : 1 }}
+                  transition={{ duration: 0.2 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    zIndex: 50
+                  }}
+                >
+                  {favorites.includes(product.id) ? (
+                    <motion.span
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ duration: 0.3 }}
+                      style={{ color: "#e63946" }}
+                    >
+                      ❤️
+                    </motion.span>
+                  ) : (
+                    <span style={{ color: "#6c757d" }}>🤍</span>
+                  )}
+                </motion.div>
+
                 <p className="product-desc">
-                  {product.product_description.length > 70
-                    ? product.product_description.substring(0, 70) + "..."
-                    : product.product_description}
+                  {product.product_description}
                 </p>
+
                 <div className="product-price-wrap">
                   {hasOffer ? (
                     <>
@@ -171,6 +252,7 @@ const Products = () => {
                       ₹ {parseFloat(product.price).toLocaleString()}
                     </span>
                   )}
+
                 </div>
               </div>
               <div className="product-btns">
@@ -188,8 +270,10 @@ const Products = () => {
                   disabled={outOfStock}
                   style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
                 >
-                  Add to Cart
+                  {outOfStock ? "Out of Stock" : "Add to Cart"}
                 </button>
+
+
               </div>
             </div>
           );
@@ -233,9 +317,8 @@ const Products = () => {
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  className={`cat-btn w-100 mb-2 ${
-                    selectedCat === cat.id ? "active" : ""
-                  }`}
+                  className={`cat-btn w-100 mb-2 ${selectedCat === cat.id ? "active" : ""
+                    }`}
                   onClick={() => {
                     setSelectedCat(cat.id);
                     fetchProducts(1, cat.id);
@@ -307,7 +390,7 @@ const Products = () => {
 
         .offer-badge {
           position: absolute;
-          top: 10px;
+          top: 133px;
           right: 0;
           background: linear-gradient(135deg, #ff4b2b, #ff416c);
           color: #fff;
@@ -355,8 +438,22 @@ const Products = () => {
           padding: 10px 12px;
           flex-grow: 1;
         }
-        .product-title { font-weight: 600; font-size: 0.95rem; color: #198754; margin-bottom: 4px; }
-        .product-desc { color: #030303ff; font-size: 0.85rem; }
+        .product-title { font-weight: 600; font-size: 1.10rem; color: #000000ff; margin-bottom: 4px; }
+        .product-desc {
+          color: #846e6eff;
+          font-size: 0.85rem;
+          line-height: 1.25rem;
+
+          display: -webkit-box;
+          -webkit-line-clamp: 3;      /* limit to 3 lines */
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: normal;        /* Ensure multi-line wrapping works */
+          max-height: calc(1.25rem * 3); /* exactly 3 lines height */
+        }
+
+
 
         .product-price-wrap {
           display: flex;

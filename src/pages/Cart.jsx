@@ -1,14 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Footer, Navbar } from "../components";
 import { useSelector, useDispatch } from "react-redux";
 import { addCart, delCart } from "../redux/action";
 import { Link } from "react-router-dom";
+import api from "../utils/base_url";
+import toast from "react-hot-toast";
 
 const Cart = () => {
+  const [shipping, setShipping] = useState(0);
+  const [GST, setGST] = useState(0);
+  const [stocks, setStocks] = useState({});
   const state = useSelector((state) => state.handleCart);
   const dispatch = useDispatch();
 
-  const addItem = (product) => dispatch(addCart(product));
+  const addItem = (product) => {
+  const availableStock = stocks[product.id];
+  if (availableStock && product.qty >= availableStock) {
+    toast.error(`Only ${availableStock} in stock for ${product.product_name}`);
+    return;
+  }
+  dispatch(addCart(product));
+};
+
   const removeItem = (product) => dispatch(delCart(product));
 
   const EmptyCart = () => (
@@ -26,20 +39,74 @@ const Cart = () => {
     </div>
   );
 
+  useEffect(() => {
+    const getShippingCharge = async () => {
+      try {
+        const res = await api.get("settings/courier-charge/"); // API endpoint
+        setShipping(Number(res.data.courier_charge)); // Adjust key if different
+      } catch (error) {
+        console.error("Shipping fetch error:", error);
+        setShipping(0); // fallback
+      }
+    };
+
+    getShippingCharge();
+  }, []);
+
+  useEffect(() => {
+    const getGST = async () => {
+      try {
+        const res = await api.get("settings/gst/"); // API endpoint
+        setGST(Number(res.data.gst_percentage)); // Adjust key if different
+      } catch (error) {
+        console.error("GST fetch error:", error);
+        setGST(0); // fallback
+      }
+    };
+
+    getGST();
+  }, []);
+
+useEffect(() => {
+  const getStock = async () => {
+    try {
+      const stockData = {};
+      for (const item of state) {
+        const res = await api.get(`stock/?product_id=${item.id}`);
+        stockData[item.id] = res.data.stock; // assuming API returns { stock: number }
+      }
+      setStocks(stockData);
+    } catch (error) {
+      console.error("Stock fetch error:", error);
+    }
+  };
+
+  if (state.length > 0) {
+    getStock();
+  }
+}, [state]);
+
+
+
+
   const ShowCart = () => {
     let subtotal = 0;
-    let shipping = 30.0;
+    const shippingCost = Number(shipping) || 0;
+    const gstPercent = Number(GST) || 0; 
     let totalItems = 0;
-
+    
     state.forEach((item) => {
       // Use offer price if available and valid else normal price
       const priceToUse =
-        item.offer_price && Number(item.offer_price) > 0
-          ? Number(item.offer_price)
-          : Number(item.price);
+      item.offer_price && Number(item.offer_price) > 0
+      ? Number(item.offer_price)
+      : Number(item.price);
       subtotal += priceToUse * item.qty;
       totalItems += item.qty;
+      
     });
+    const gstAmount = (subtotal * gstPercent) / 100;
+    const totalAmount = subtotal + gstAmount + shippingCost;
 
     return (
       <section className="h-100 gradient-custom-themed">
@@ -154,12 +221,16 @@ const Cart = () => {
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center px-0 text-theme-dark">
                       Shipping
-                      <span>₹{shipping.toLocaleString()}</span>
+                      <span>₹{shippingCost.toLocaleString()}</span>
+                    </li>
+                    <li className="list-group-item d-flex justify-content-between align-items-center px-0 text-theme-dark">
+                      GST {GST.toLocaleString()}%
+                      <span>₹{gstAmount.toLocaleString()}</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-0 text-theme-dark">
                       <strong>Total amount</strong>
                       <span>
-                        <strong>₹{Math.round(subtotal + shipping).toLocaleString()}</strong>
+                        <strong>₹{totalAmount.toLocaleString()}</strong>
                       </span>
                     </li>
                   </ul>
@@ -244,7 +315,7 @@ const Cart = () => {
         }
         .btn-themed-outline:hover, .btn-themed-outline:focus {
           background-color: var(--brown-dark);
-          color: #fff !important;
+          color: #198754 !important;
           border-color: var(--brown-dark);
           outline: none;
           box-shadow: 0 0 8px rgba(122, 86, 58, 0.6);

@@ -2,11 +2,34 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar, Footer } from "../components";
 import api from "../utils/base_url";
+import toast from "react-hot-toast";
 
 const OrderTracking = () => {
   const { orderNumber } = useParams(); // e.g., /order-tracking/:orderNumber
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Get order ID from URL
+
+const downloadInvoice = async () => {
+  try {
+    const response = await api.get(`orderspdf/${order.id}/`, {
+      responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${order.order_number}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+  } catch (error) {
+    console.error("PDF Download Error:", error);
+    toast.error("Failed to download invoice");
+  }
+};
+
+
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -15,7 +38,7 @@ const OrderTracking = () => {
         setOrder(res.data.data);
       } catch (err) {
         console.error(err);
-        alert("Failed to fetch order details");
+        toast.error("Failed to fetch order details");
       } finally {
         setLoading(false);
       }
@@ -27,7 +50,7 @@ const OrderTracking = () => {
   if (loading) {
     return (
       <div className="container py-5 text-center">
-        <h5 style={{ color: "#5b3b25" }}>Loading order details...</h5>
+        <h5 style={{ color: "#198754" }}>Loading order details...</h5>
       </div>
     );
   }
@@ -35,7 +58,7 @@ const OrderTracking = () => {
   if (!order) {
     return (
       <div className="container py-5 text-center">
-        <h5 style={{ color: "#5b3b25" }}>No order found</h5>
+        <h5 style={{ color: "#198754" }}>No order found</h5>
         <Link to="/" className="btn btn-outline-themed mt-3">
           Back to Home
         </Link>
@@ -53,7 +76,7 @@ const OrderTracking = () => {
             <h4 className="mb-0 text-theme-dark text-center">Order Tracking</h4>
           </div>
           <div className="card-body">
-            <h5 className="text-theme-dark">Order Numver#{order.order_number}</h5>
+            <h5 className="text-theme-dark">Order Number#{order.order_number}</h5>
             <p className="mb-1">
               <strong>Status:</strong>{" "}
               <span className={`badge ${order.status === "delivered" ? "bg-success" : "bg-warning text-dark"} text-uppercase`}>
@@ -171,14 +194,18 @@ const OrderTracking = () => {
           </div>
         </div>
 
-        <div className="text-center">
-          <Link to="/" >
-              <button type="button" className="btn-themed">
-                   Back to Home
-                </button>
+        <div className="text-center d-flex justify-content-center gap-3">
+          <Link to="/">
+            <button type="button" className="btn-themed">
+              Back to Home
+            </button>
           </Link>
-       
+
+          <button type="button" className="btn-themed pd-9" onClick={downloadInvoice}>
+            Download Invoice
+          </button>
         </div>
+
       </div>
       <Footer />
 

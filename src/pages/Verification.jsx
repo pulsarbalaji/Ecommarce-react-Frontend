@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import api from "../utils/base_url";
+import { useAuth } from "../context/AuthContext";
 
 const Verification = () => {
   const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -11,6 +12,7 @@ const Verification = () => {
   const inputsRef = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
 
   const { type } = location.state || {};
   const sessionId = sessionStorage.getItem("session_id");
@@ -24,7 +26,7 @@ const Verification = () => {
 
   useEffect(() => {
     if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      const timer = setTimeout(() => setResendTimer((t) => t - 1), 1000);
       return () => clearTimeout(timer);
     }
   }, [resendTimer]);
@@ -58,10 +60,18 @@ const Verification = () => {
         session_id: sessionId,
         otp: otp.join(""),
       });
+
       if (res.data?.access && res.data?.refresh) {
         sessionStorage.setItem("access_token", res.data.access);
         sessionStorage.setItem("refresh_token", res.data.refresh);
         sessionStorage.setItem("user", JSON.stringify(res.data.user));
+
+        login({
+          access: res.data.access,
+          refresh: res.data.refresh,
+          user: res.data.user,
+        });
+
         toast.success("🎉 OTP Verified! Welcome aboard 🚀");
         navigate("/");
       } else {
@@ -69,10 +79,9 @@ const Verification = () => {
       }
     } catch (err) {
       const errorData = err.response?.data;
-
       const errorMessage =
         errorData?.error ||
-        errorData?.errors?.non_field_errors?.[0] || // handles {"errors":{"non_field_errors":["Invalid OTP"]}}
+        errorData?.errors?.non_field_errors?.[0] ||
         errorData?.errors ||
         errorData?.message ||
         "OTP verification failed. Please try again.";
@@ -86,14 +95,15 @@ const Verification = () => {
   const handleResendOtp = async () => {
     try {
       setResendTimer(60);
-
       const endpoint =
         type === "email" ? "register/email-step1/" : "phone-login-step1/";
 
-      // ✅ Get from sessionStorage
       const payload =
         type === "email"
-          ? { email: sessionStorage.getItem("email"), password: sessionStorage.getItem("password") }
+          ? {
+            email: sessionStorage.getItem("email"),
+            password: sessionStorage.getItem("password"),
+          }
           : { phone: sessionStorage.getItem("phone") };
 
       if (!payload.email && !payload.phone) {
@@ -105,13 +115,11 @@ const Verification = () => {
       const res = await api.post(endpoint, payload);
       sessionStorage.setItem("session_id", res.data.session_id);
       toast.success(res.data.message || "OTP resent successfully");
-      setOtp(["", "", "", "", "", ""]);
-
+      setOtp(new Array(6).fill(""));
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to resend OTP");
     }
   };
-
 
   return (
     <div className="verification-container d-flex justify-content-center align-items-center">
@@ -124,12 +132,18 @@ const Verification = () => {
         <h4 className="fw-bold mb-3 verification-title">
           OTP Verification ({type === "email" ? "Email" : "Phone"})
         </h4>
+
         <p className="text-muted small mb-4">
-          Enter the 6-digit OTP we sent to your {type}. <br />
+          Enter the 6-digit OTP we sent to your{" "}
+          {type === "email" ? (
+            <>email address</>
+          ) : (
+            <>WhatsApp number</>
+          )}
+          . <br />
           Didn’t receive it? You can resend after{" "}
           <span className="fw-bold">{resendTimer}s</span>.
         </p>
-
         <form onSubmit={handleSubmit} className="otp-form">
           <div className="otp-inputs mb-4">
             {otp.map((digit, index) => (
@@ -148,6 +162,7 @@ const Verification = () => {
 
           <motion.button
             whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
             disabled={loading}
             className="btn btn-themed btn-lg fw-bold w-100"
             type="submit"
@@ -168,72 +183,86 @@ const Verification = () => {
       <style>{`
         .verification-container {
           min-height: 100vh;
-          background: linear-gradient(145deg, #fffaf4, #fdf0e2);
+          background: linear-gradient(145deg, #ffffff, #ffffff);
           padding: 20px;
         }
+
         .verification-card {
           max-width: 400px;
           width: 100%;
-          background: rgba(255, 255, 255, 0.85);
+          background: rgba(255, 255, 255, 0.9);
           backdrop-filter: blur(12px);
-          border: 1.5px solid #f1e6d4;
+          border: 1.5px solid #e9f8e2;
           border-radius: 24px;
-          box-shadow: 0 8px 28px rgba(122, 86, 58, 0.22);
+          box-shadow: 0 8px 28px rgba(112,168,77, 0.3);
           padding: 30px 20px;
         }
+
         .verification-title {
           font-weight: 800;
           font-size: 1.9rem;
-          color: #7a563a;
+          color: #198754;
         }
+
         .otp-inputs {
           display: flex;
           justify-content: center;
-          align-items: center;
           gap: 10px;
           flex-wrap: nowrap;
-          overflow-x: auto;
         }
+
         .otp-input {
           flex: 1;
           min-width: 45px;
           max-width: 55px;
           height: 65px;
           border-radius: 16px;
-          border: 1.5px solid #f1e6d4;
-          background-color: #fffaf4;
-          color: #7a563a;
+          border: 1.5px solid #b6e4a4;
+          background-color: #f3fff0;
+          color: #198754;
           font-weight: 800;
           font-size: 2rem;
           transition: all 0.2s ease;
         }
+
         .otp-input:focus {
-          border-color: #7a563a;
+          border-color: #198754;
           outline: none;
-          box-shadow: 0 0 12px rgba(122, 86, 58, 0.6);
+          box-shadow: 0 0 12px rgba(112,168,77, 0.8);
         }
+
+        /* ✅ FIXED BUTTON: Default white, hover green */
         .btn-themed {
-          background-color: #7a563a;
-          color: #fff;
+          background-color: #fff;
+          color: #198754;
+          border: 2px solid #198754;
           border-radius: 30px;
           font-size: 1.2rem;
           padding: 16px 0;
-          border: none;
           font-weight: 700;
+          transition: all 0.3s ease;
         }
+
+        .btn-themed:hover:not(:disabled),
+        .btn-themed:focus {
+          background-color: #198754;
+          color: #fff;
+          box-shadow: 0 6px 20px rgba(112,168,77, 0.4);
+        }
+
         .btn-themed:disabled {
-          background-color: #bba683;
+          background-color: #f1f1f1;
+          color: #aaa;
+          border-color: #ddd;
           cursor: not-allowed;
         }
-        .btn-themed:hover:not(:disabled) {
-          background-color: #68492f;
-          box-shadow: 0 8px 20px rgba(122, 86, 58, 0.5);
-        }
+
         .resend-btn {
           font-weight: 600;
           font-size: 1rem;
-          color: #7a563a;
+          color: #198754;
         }
+
         @media (max-width: 600px) {
           .otp-input {
             min-width: 40px;
@@ -245,6 +274,7 @@ const Verification = () => {
             gap: 8px;
           }
         }
+
         @media (max-width: 400px) {
           .otp-input {
             min-width: 36px;
