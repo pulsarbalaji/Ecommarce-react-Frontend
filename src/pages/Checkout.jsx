@@ -117,22 +117,21 @@ const Checkout = () => {
       newErrors.preferredCourier = "Please select a courier.";
     return newErrors;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return toast.error("Fix form errors");
-
     if (!cartItems.length) return toast.error("Cart is empty!");
 
-    // Prepare order payload
+    // Build order payload
     const itemsPayload = cartItems.map((item) => {
       const price = item.offer_price > 0 ? item.offer_price : item.price;
       return { product: item.id, quantity: item.qty, price, total: price * item.qty };
     });
 
     const orderPayload = {
+      auth_id: user.id,
       customer: user.customer_details.id,
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -149,26 +148,40 @@ const Checkout = () => {
       total_amount: totalAmount,
     };
 
-    // COD Flow
+    // ===============================================================
+    // 🧾 1️⃣ CASH ON DELIVERY
+    // ===============================================================
     if (formData.paymentMethod === "cod") {
       try {
-        const res = await api.post("orders/", orderPayload);
+        const res = await api.post("orders/create-cod/", { order_data: orderPayload });
         toast.success("Order placed successfully!");
         dispatch(clearCart());
         navigate(`/order-confirmation/${res.data.order.id}`);
-      } catch {
-        toast.error("Something went wrong!");
+      } catch (err) {
+        const msg = err.response?.data?.message || "Something went wrong!";
+        toast.error(msg);
       }
       return;
     }
 
-    // 🔥 ONLINE PAYMENT FLOW
+    // ===============================================================
+    // 💳 2️⃣ ONLINE PAYMENT FLOW (safe)
+    // ===============================================================
     try {
-      // 1️⃣ Create Razorpay order
-      const razorRes = await api.post("create-razorpay-order/", { amount: totalAmount });
-      const razorpayOrder = razorRes.data.razorpay_order;
+      // Step 1: Reserve stock and create Razorpay order
+      const reserveRes = await api.post("orders/reserve/", {
+        ...orderPayload,
+        payment_method: "online",
+      });
 
-      // 2️⃣ Open Razorpay
+      if (!reserveRes.data.status) {
+        toast.error(reserveRes.data.message);
+        return;
+      }
+
+      const razorpayOrder = reserveRes.data.razorpay_order;
+
+      // Step 2: Open Razorpay only if stock reserved
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY,
         amount: razorpayOrder.amount,
@@ -178,20 +191,21 @@ const Checkout = () => {
         description: "Order Payment",
         handler: async function (response) {
           try {
-            // 3️⃣ Verify payment & create real order
-            const verifyRes = await api.post("verify-payment/", {
+            // Step 3: Verify payment and finalize order
+            const verifyRes = await api.post("orders/verify/", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               order_data: orderPayload,
-              customer_id: user.customer_details.id,
             });
 
             toast.success("Payment successful!");
             dispatch(clearCart());
             navigate(`/order-confirmation/${verifyRes.data.order.id}`);
-          } catch {
-            toast.error("Payment verification failed");
+          } catch (err) {
+            const msg =
+              err.response?.data?.message || "Product might be out of stock now.";
+            toast.error(msg);
           }
         },
         prefill: {
@@ -204,8 +218,9 @@ const Checkout = () => {
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", () => toast.error("Payment failed"));
       rzp.open();
-    } catch {
-      toast.error("Unable to initiate payment");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Unable to initiate payment";
+      toast.error(msg);
     }
   };
 
