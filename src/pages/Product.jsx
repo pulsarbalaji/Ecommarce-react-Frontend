@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addCart } from "../redux/action";
 import { Footer, Navbar } from "../components";
@@ -14,6 +14,10 @@ const Product = () => {
   const [loading, setLoading] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [stocks, setStocks] = useState({});
+  const [variants, setVariants] = useState([]);
+  const navigate = useNavigate();
+
+
   const dispatch = useDispatch();
   const cart = useSelector((s) => s.handleCart || []); // read current cart from redux
 
@@ -48,6 +52,15 @@ const Product = () => {
         const res = await api.get(`/productlist/${id}/`);
         const data = res.data?.data;
         setProduct(data);
+        if (data && !data.parent) {
+          try {
+            const resVar = await api.get(`/productvariantfillter/?parent_id=${data.id}`);
+            setVariants(resVar.data?.data || []);
+          } catch (err) {
+            console.error("Failed to load variants", err);
+          }
+        }
+
         setLoading(false);
 
         if (data?.category) {
@@ -164,9 +177,9 @@ const Product = () => {
             </div>
           </div>
           <div className="col-md-6 py-3">
-            <h6 className="text-uppercase" style={{color:"#000000ff"}} > {product.category_name}</h6>
+            <h6 className="text-uppercase" style={{ color: "#000000ff" }} > {product.category_name}</h6>
             <h3 className="fw-bold text-success">{product.product_name}</h3>
-            <p className="mb-2" style={{color:"#000000ff"}}>
+            <p className="mb-2" style={{ color: "#000000ff" }}>
               Rating: {product.average_rating}{" "}
               <i className="fa fa-star text-warning"></i>
             </p>
@@ -182,12 +195,31 @@ const Product = () => {
                 `₹${parseFloat(product.price).toLocaleString()}`
               )}
             </h4>
-            <p className="small" style={{ minHeight: "70px", color:"#000000ff"}}>
+            <p className="small" style={{ minHeight: "70px", color: "#000000ff" }}>
               {product.product_description}
             </p>
             <p className="small mb-2" style={{ color: "#000000ff" }}>
-             
+
             </p>
+            {variants.length > 0 && (
+              <div className="variant-section mt-4">
+                <h6 className="fw-bold text-success mb-3">Available Variants :</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {variants.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => navigate(`/product/${v.id}`)}
+                      className={`variant-btn ${Number(id) === Number(v.id) ? "active" : ""
+                        }`}
+                    >
+                      {v.quantity} {v.quantity_unit}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+
             <div className="d-flex flex-wrap">
               <button
                 className="btn-green-outline me-2 mb-2"
@@ -288,7 +320,7 @@ const Product = () => {
                 </p>
 
                 <p className="small mb-1" style={{ color: "#000000ff" }}>
-                  
+
                 </p>
 
                 <div className="d-flex justify-content-center flex-wrap">
@@ -449,6 +481,69 @@ const Product = () => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
+              /* === Variant Section === */
+
+    .variant-section {
+  margin-bottom: 18px; /* 🟢 creates clean gap before Add to Cart */
+}
+
+.variant-section .variant-btn {
+  margin-bottom: 6px; /* 🟢 gives each button a bit of breathing room */
+}
+ .variant-section {
+  border: 1px solid #e6d2b5;
+  border-radius: 12px;
+  background: #fffaf4;
+  padding: 12px 15px;
+  display: inline-block;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+    .variant-section h6 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #198754;
+      letter-spacing: 0.3px;
+    }
+
+    .variant-btn {
+      border: 1.5px solid #198754;
+      background-color: #fff;
+      color: #198754;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .variant-btn:hover {
+      background-color: #198754;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .variant-btn.active {
+      background-color: #70a84d;
+      border-color: #70a84d;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(112,168,77,0.25);
+    }
+
+    @media (max-width: 768px) {
+      .variant-section {
+        text-align: center;
+        width: 100%;
+        margin-top: 15px;
+      }
+
+      .variant-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+      }
+    }
+
       `}</style>
     </>
   );
