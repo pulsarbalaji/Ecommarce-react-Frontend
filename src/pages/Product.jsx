@@ -15,6 +15,17 @@ const Product = () => {
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [stocks, setStocks] = useState({});
   const [variants, setVariants] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [feedbackProductId, setFeedbackProductId] = useState(null);
+  const [showDescModal, setShowDescModal] = useState(false);
+
+
+
+
   const navigate = useNavigate();
 
 
@@ -179,10 +190,16 @@ const Product = () => {
           <div className="col-md-6 py-3">
             <h6 className="text-uppercase" style={{ color: "#000000ff" }} > {product.category_name}</h6>
             <h3 className="fw-bold text-success">{product.product_name}</h3>
-            <p className="mb-2" style={{ color: "#000000ff" }}>
-              Rating: {product.average_rating}{" "}
-              <i className="fa fa-star text-warning"></i>
+            <p className="mb-2 d-flex align-items-center gap-2" style={{ color: "#000000ff" }}>
+              Rating: {product.average_rating} <i className="fa fa-star text-warning"></i>
+              <button
+                className="btn btn-link p-0 text-success fw-semibold"
+                onClick={() => openReviewModal(product.id)}
+              >
+                View Reviews
+              </button>
             </p>
+
             <h4 className="text-success my-2">
               {hasOffer ? (
                 <>
@@ -195,9 +212,37 @@ const Product = () => {
                 `₹${parseFloat(product.price).toLocaleString()}`
               )}
             </h4>
-            <p className="small" style={{ minHeight: "70px", color: "#000000ff" }}>
-              {product.product_description}
+            <p
+              className="small product-desc"
+              style={{
+                minHeight: "70px",
+                color: "#000000ff",
+                whiteSpace: "pre-line", // ✅ preserves line breaks
+              }}
+            >
+              {product.product_description?.length > 250
+                ? product.product_description.slice(0, 250) + "..."
+                : product.product_description}
+
+              {product.product_description && product.product_description.length > 250 && (
+                <span
+                  onClick={() => {
+                    console.log("Opening modal...");
+                    setShowDescModal(true);
+                  }}
+                  style={{
+                    color: "#198754",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    marginLeft: "6px",
+                  }}
+                >
+                  Read more
+                </span>
+              )}
             </p>
+
+
             <p className="small mb-2" style={{ color: "#000000ff" }}>
 
             </p>
@@ -348,6 +393,29 @@ const Product = () => {
       </div>
     </div>
   );
+  const openReviewModal = (productId) => {
+    setFeedbackProductId(productId);
+    setShowReviewModal(true);
+    fetchReviews(productId, 1);
+  };
+
+  const fetchReviews = async (productId, pageNo = 1) => {
+    setLoadingReviews(true);
+    try {
+      const res = await api.get(`/product-feedback-list/${productId}/?page=${pageNo}`);
+      const pageData = res.data;
+      const data = pageData?.results?.data || [];
+      setReviews(data);
+      setPage(pageNo);
+      setHasNext(Boolean(pageData?.next));
+    } catch (err) {
+      console.error("Review fetch failed:", err);
+      toast.error("Failed to load reviews");
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
 
   return (
     <>
@@ -360,14 +428,30 @@ const Product = () => {
 
       {/* Theme Styles */}
       <style>{`
-        .product-image-wrapper {
-          background: #fffaf4;
-          border: 1.5px solid #e6d2b5;
-          border-radius: 12px;
-          padding: 20px;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-          position: relative;
-        }
+     /* 🖼️ FIXED IMAGE BOX */
+.product-image-wrapper {
+  background: #fffaf4;
+  border: 1.5px solid #e6d2b5;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  position: relative;
+
+  /* ✅ fixed height for all product image boxes */
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* prevents large images from escaping box */
+}
+
+.product-image-wrapper img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain; /* keeps aspect ratio and fits perfectly */
+  display: block;
+}
+
         .stock-badge {
           position: absolute;
           left: 10px;
@@ -483,68 +567,266 @@ const Product = () => {
         }
               /* === Variant Section === */
 
-    .variant-section {
-  margin-bottom: 18px; /* 🟢 creates clean gap before Add to Cart */
-}
+            .variant-section {
+          margin-bottom: 18px; /* 🟢 creates clean gap before Add to Cart */
+        }
 
-.variant-section .variant-btn {
-  margin-bottom: 6px; /* 🟢 gives each button a bit of breathing room */
-}
- .variant-section {
-  border: 1px solid #e6d2b5;
-  border-radius: 12px;
-  background: #fffaf4;
-  padding: 12px 15px;
-  display: inline-block;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
+        .variant-section .variant-btn {
+          margin-bottom: 6px; /* 🟢 gives each button a bit of breathing room */
+        }
+        .variant-section {
+          border: 1px solid #e6d2b5;
+          border-radius: 12px;
+          background: #fffaf4;
+          padding: 12px 15px;
+          display: inline-block;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
 
-    .variant-section h6 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #198754;
-      letter-spacing: 0.3px;
-    }
+            .variant-section h6 {
+              font-size: 0.95rem;
+              font-weight: 700;
+              color: #198754;
+              letter-spacing: 0.3px;
+            }
 
-    .variant-btn {
-      border: 1.5px solid #198754;
-      background-color: #fff;
-      color: #198754;
-      font-weight: 600;
-      font-size: 0.85rem;
-      padding: 6px 14px;
-      border-radius: 25px;
-      transition: all 0.3s ease;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
+            .variant-btn {
+              border: 1.5px solid #198754;
+              background-color: #fff;
+              color: #198754;
+              font-weight: 600;
+              font-size: 0.85rem;
+              padding: 6px 14px;
+              border-radius: 25px;
+              transition: all 0.3s ease;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            }
 
-    .variant-btn:hover {
-      background-color: #198754;
-      color: #fff;
-      transform: translateY(-1px);
-    }
+            .variant-btn:hover {
+              background-color: #198754;
+              color: #fff;
+              transform: translateY(-1px);
+            }
 
-    .variant-btn.active {
-      background-color: #70a84d;
-      border-color: #70a84d;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(112,168,77,0.25);
-    }
+            .variant-btn.active {
+              background-color: #70a84d;
+              border-color: #70a84d;
+              color: #fff;
+              box-shadow: 0 2px 6px rgba(112,168,77,0.25);
+            }
 
-    @media (max-width: 768px) {
-      .variant-section {
-        text-align: center;
-        width: 100%;
-        margin-top: 15px;
-      }
+            @media (max-width: 768px) {
+              .variant-section {
+                text-align: center;
+                width: 100%;
+                margin-top: 15px;
+              }
 
-      .variant-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-      }
-    }
+              .variant-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+              }
+            }
+              .review-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        }
+        .review-content {
+          background: #fff;
+          max-height: 80vh;
+          overflow-y: auto;
+          width: 90%;
+          max-width: 500px;
+          border-radius: 12px;
+          animation: fadeIn 0.3s ease;
+        }
+        .review-list {
+          max-height: 60vh;
+          overflow-y: auto;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+          
+        .modal-close-btn {
+          position: absolute;
+          top: 10px;
+          right: 12px;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #198754;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+        .modal-close-btn:hover {
+          transform: scale(1.1);
+          color: #70a84d;
+        }
+
+
+        /* === Description Modal Fix === */
+        .desc-modal {
+          position: fixed; /* 🟢 make it overlay entire viewport */
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.6); /* semi-transparent black backdrop */
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 99999; /* 🟢 ensure it's above Navbar/Footer */
+        }
+
+        .desc-modal-content {
+          background: #fffaf4;
+          width: 90%;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow-y: auto;
+          border-radius: 12px;
+          border: 1.5px solid #e6d2b5;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+          position: relative;
+          animation: slideUpFade 0.3s ease; /* 🟢 smooth open animation */
+        }
+
+        /* Optional subtle open animation */
+        @keyframes slideUpFade {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .desc-text {
+          white-space: pre-line;
+          font-size: 0.95rem;
+          line-height: 1.6;
+          color: #000000ff;
+          margin-top: 10px;
+        }
+           .btn-nav {
+          background: #198754;
+          color: white;
+          border: none;
+          padding: 6px 14px;
+          border-radius: 25px;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+        }
+
+
 
       `}</style>
+
+      {showDescModal && (
+        <div className="desc-modal">
+          <div className="desc-modal-content p-4 rounded shadow">
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowDescModal(false)}
+            >
+              ×
+            </button>
+
+            <h5 className="text-success fw-bold mb-3">Product Description</h5>
+            <div
+              className="desc-text"
+              style={{
+                whiteSpace: "pre-line",
+                color: "#000000ff",
+                fontSize: "0.95rem",
+                lineHeight: "1.5rem",
+              }}
+            >
+              {product.product_description}
+            </div>
+
+            <div className="modal-footer justify-content-center">
+              <button
+                className="btn-themed"
+                onClick={() => setShowDescModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReviewModal && (
+        <div className="review-modal">
+          <div className="review-content p-4 rounded shadow">
+            <h5 className="text-success fw-bold mb-3">Product Reviews</h5>
+
+            {loadingReviews ? (
+              <p className="text-center">Loading...</p>
+            ) : reviews.length === 0 ? (
+              <p className="text-center text-muted">No reviews yet.</p>
+            ) : (
+              <div className="review-list">
+                {reviews.map((rev) => (
+                  <div key={rev.id} className="review-item mb-3 pb-2 border-bottom">
+                    <strong>{rev.user_name}</strong>
+                    <div className="text-warning">
+                      {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                    </div>
+                    <p className="mb-1 text-secondary small">{rev.comment}</p>
+                    <small className="text-muted">
+                      {new Date(rev.created_at).toLocaleDateString()}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <button
+                className="btn-nav"
+                disabled={page === 1}
+                onClick={() => fetchReviews(feedbackProductId, page - 1)}
+              >
+                Prev
+              </button>
+              <button
+                className="btn-nav"
+                disabled={!hasNext}
+                onClick={() => fetchReviews(feedbackProductId, page + 1)}
+              >
+                Next
+              </button>
+            </div>
+
+            <div className="modal-footer justify-content-center">
+              <button
+                className="btn-themed"
+                onClick={() => setShowReviewModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </>
   );
 };

@@ -5,6 +5,7 @@ import { addCart, delCart } from "../redux/action";
 import { Link } from "react-router-dom";
 import api from "../utils/base_url";
 import toast from "react-hot-toast";
+import '../styles/index.css';
 
 const Cart = () => {
   const [shipping, setShipping] = useState(0);

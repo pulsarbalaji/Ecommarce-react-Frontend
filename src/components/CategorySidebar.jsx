@@ -1,5 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import '../styles/index.css';
 
 const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
   return (

@@ -6,7 +6,7 @@ import api from "../utils/base_url";
 import { clearCart } from "../redux/reducer/handleCart";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
-
+import '../styles/index.css';
 const Checkout = () => {
   const cartItems = useSelector((state) => state.handleCart);
   const { user } = useContext(AuthContext);

@@ -6,6 +6,8 @@ import api from "../utils/base_url";
 import { AuthContext } from "../context/AuthContext";
 import WhatsAppWidget from "../pages/WhatsAppWidget";
 import InstagramWidget from "../pages/Instagramwidget";
+import '../styles/index.css';
+
 
 const Navbar = () => {
   const state = useSelector((state) => state.handleCart);
@@ -273,6 +275,7 @@ const Navbar = () => {
                             outline: none;
                             background: #fffaf4;
                           }
+                            
                         `}</style>
                       </div>
                     )}

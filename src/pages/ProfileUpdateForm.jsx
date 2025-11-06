@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 const ProfileUpdateForm = () => {
-  const { user } = useContext(AuthContext);
+  const { user,access } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     full_name: "",
     address: "",
@@ -15,9 +15,12 @@ const ProfileUpdateForm = () => {
   const [preview, setPreview] = useState(null);
 
   useEffect(() => {
-    if (user?.customer_details?.id) {
-      api.get(`/customerslist/${user.customer_details.id}/`).then((res) => {
+  if (user?.customer_details?.id && access) {
+    (async () => {
+      try {
+        const res = await api.get(`/customerslist/${user.customer_details.id}/`);
         const data = res.data;
+
         setFormData({
           full_name: data.data.full_name || user.customer_details.full_name || "",
           address: data.data.address || user.customer_details.address || "",
@@ -36,9 +39,12 @@ const ProfileUpdateForm = () => {
         } else if (user.profile_image) {
           setPreview(user.profile_image);
         }
-      });
-    }
-  }, [user]);
+      } catch (err) {
+        console.error("Failed to load customer:", err);
+      }
+    })();
+  }
+}, [user, access]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;

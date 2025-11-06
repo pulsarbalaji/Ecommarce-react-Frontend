@@ -9,6 +9,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import toast from "react-hot-toast";
 import api from "../utils/base_url";
 import CategorySidebar from "./CategorySidebar";
+import '../styles/index.css';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -440,18 +441,22 @@ const Products = () => {
         }
         .product-title { font-weight: 600; font-size: 1.10rem; color: #000000ff; margin-bottom: 4px; }
         .product-desc {
-          color: #846e6eff;
-          font-size: 0.85rem;
-          line-height: 1.25rem;
+        color: #846e6eff;
+        font-size: 0.85rem;
+        line-height: 1.25rem;
+        text-align: left; /* ensures all lines start at same position */
+        
+        display: -webkit-box;
+        -webkit-line-clamp: 3;          /* show exactly 3 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
 
-          display: -webkit-box;
-          -webkit-line-clamp: 3;      /* limit to 3 lines */
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: normal;        /* Ensure multi-line wrapping works */
-          max-height: calc(1.25rem * 3); /* exactly 3 lines height */
-        }
+        max-height: calc(1.25rem * 3);  /* ensures only 3 visible lines */
+        margin-top: 4px;
+      }
+
 
 
 

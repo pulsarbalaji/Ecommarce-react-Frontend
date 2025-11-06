@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Footer, Navbar } from "../components";
 import api from "../utils/base_url";
+import '../styles/index.css';
 
 const AboutPage = () => {
   const [categories, setCategories] = useState([]);
