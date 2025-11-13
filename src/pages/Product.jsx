@@ -248,7 +248,7 @@ const Product = () => {
             </p>
             {variants.length > 0 && (
               <div className="variant-section mt-4">
-                <h6 className="fw-bold text-success mb-3">Available Variants :</h6>
+                <h6 className="fw-bold text-success mb-3">Available :</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {variants.map((v) => (
                     <button
@@ -322,6 +322,9 @@ const Product = () => {
                   ? { opacity: 0.5, pointerEvents: "none" }
                   : {}
               }
+              onClick={() => {
+                if (!outOfStock) navigate(`/product/${item.id}`);
+              }}
             >
               {hasOffer && (
                 <div className="offer-badge">
@@ -369,21 +372,16 @@ const Product = () => {
                 </p>
 
                 <div className="d-flex justify-content-center flex-wrap">
-                  <Link
-                    to={outOfStock ? "#" : `/product/${item.id}`}
-                    className="btn-green-outline btn-sm me-2 mb-2"
-                    tabIndex={outOfStock ? -1 : 0}
-                    style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-                  >
-                    View
-                  </Link>
                   <button
                     className="btn-green btn-sm mb-2"
-                    onClick={() => addProduct(item)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Prevent navigation when adding to cart
+                      addProduct(item);
+                    }}
                     disabled={outOfStock}
                     style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
                   >
-                    +
+                    Add to cart
                   </button>
                 </div>
               </div>
@@ -477,9 +475,9 @@ const Product = () => {
           position: absolute;
           top: 10px;
           right: 0;
-          background: linear-gradient(135deg, #ff4b2b, #ff416c);
+          background: linear-gradient(135deg, #70a84d, #198754);
           color: #fff;
-          padding: 4px 10px;
+          padding: 2px 5px;
           font-size: 0.75rem;
           font-weight: 600;
           border-radius: 6px;

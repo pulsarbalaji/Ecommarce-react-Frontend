@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addCart } from "../redux/action";
-import { Link, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import Skeleton from "react-loading-skeleton";
@@ -16,16 +16,15 @@ const Products = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [favorites, setFavorites] = useState([]);
 
 
+  const sectionRefs = useRef({});
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const state = useSelector((state) => state.handleCart);
 
   const addProduct = (product) => {
@@ -94,17 +93,15 @@ const Products = () => {
     }
   }, []);
 
-  const fetchProducts = useCallback(async (pageNo = 1, categoryId = null) => {
+  const fetchProducts = useCallback(async (categoryId = null) => {
     setLoading(true);
     try {
       const url = categoryId
-        ? `productfilter/${categoryId}/?page=${pageNo}`
-        : `productlist/?page=${pageNo}`;
+        ? `productfilter/${categoryId}/`
+        : `productlist/`;
 
       const res = await api.get(url);
       setProducts(res.data.data || []);
-      setPage(res.data.current_page || 1);
-      setTotalPages(res.data.total_pages || 1);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -114,10 +111,72 @@ const Products = () => {
 
   useEffect(() => {
     fetchCategories();
-    fetchProducts();
     fetchFavorites();
-  }, [fetchCategories, fetchProducts, fetchFavorites]);
 
+    // Only load all products if not coming from About
+    if (!location.state?.categoryId) {
+      fetchProducts();
+    }
+  }, [fetchCategories, fetchProducts, fetchFavorites, location.state]);
+
+  useEffect(() => {
+    if (!products.length || !categories.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the first visible section
+        const visible = entries.find((entry) => entry.isIntersecting);
+        if (visible) {
+          const categoryName = visible.target.getAttribute("data-category");
+          const catObj = categories.find(
+            (cat) => cat.category_name === categoryName
+          );
+          if (catObj && selectedCat !== catObj.id) {
+            setSelectedCat(catObj.id); // ✅ auto-select sidebar category
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -65% 0px",
+        threshold: 0.2, // adjust for sensitivity
+      }
+    );
+
+    Object.values(sectionRefs.current).forEach((section) => {
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, [categories, products, selectedCat]);
+
+  useEffect(() => {
+    const categoryId = location.state?.categoryId;
+
+    if (!categoryId || !categories.length) return;
+
+    // Set selected category
+    setSelectedCat(categoryId);
+
+    // Fetch products for this category
+    fetchProducts(categoryId);
+
+    // Wait until both categories and products are loaded
+    const scrollToCategory = () => {
+      const selectedCategory = categories.find((cat) => cat.id === categoryId);
+      if (selectedCategory && sectionRefs.current[selectedCategory.category_name]) {
+        const sectionEl = sectionRefs.current[selectedCategory.category_name];
+        const yOffset = -100;
+        const y = sectionEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    };
+
+    // Use a small delay to ensure DOM sections are rendered
+    const scrollTimeout = setTimeout(scrollToCategory, 1200);
+
+    return () => clearTimeout(scrollTimeout);
+  }, [location.state, categories, fetchProducts]);
 
   const Loading = () => (
     <div className="grid-container">
@@ -129,239 +188,284 @@ const Products = () => {
     </div>
   );
 
-  const ShowProducts = () => (
-    <>
-      {/* Mobile category buttons */}
-      <div className="d-flex flex-wrap justify-content-center py-4 gap-2 d-lg-none">
-        <button
-          className={`cat-btn ${selectedCat === null ? "active" : ""}`}
-          onClick={() => {
-            setSelectedCat(null);
-            fetchProducts(1, null);
-          }}
-        >
-          All
-        </button>
 
-        {categories.slice(0, 4).map((cat) => (
-          <button
-            key={cat.id}
-            className={`cat-btn ${selectedCat === cat.id ? "active" : ""}`}
-            onClick={() => {
-              setSelectedCat(cat.id);
-              fetchProducts(1, cat.id);
-            }}
-          >
-            {cat.category_name}
-          </button>
-        ))}
+  const ShowProducts = () => {
+    // Group products by category name
+    const groupedProducts = products.reduce((acc, product) => {
+      const categoryName = product.category_name || "Uncategorized";
+      if (!acc[categoryName]) acc[categoryName] = [];
+      acc[categoryName].push(product);
+      return acc;
+    }, {});
 
-        {categories.length > 4 && (
-          <button className="cat-btn more-btn" onClick={() => setShowModal(true)}>
-            More +
-          </button>
-        )}
-      </div>
+    return (
+      <>
 
-      {/* Product Grid */}
-      <div className="grid-container">
-        {products.map((product, idx) => {
-          const hasOffer =
-            product.offer_percentage &&
-            Number(product.offer_percentage) > 0 &&
-            product.offer_price;
 
-          const altCardClass = idx % 2 === 0 ? "card-even" : "card-odd";
-          const outOfStock = !product.is_available || product.stock_quantity === 0;
-          const stockLow = product.stock_quantity <= 10 && product.stock_quantity > 0;
-
-          return (
-            <div
-              key={product.id}
-              className={`product-card ${altCardClass}${outOfStock ? " out-of-stock" : ""}`}
-              style={outOfStock ? { opacity: 0.5, pointerEvents: "none" } : {}}
-            >
-              {hasOffer && (
-                <span className="offer-badge">
-                  {Math.round(product.offer_percentage)}% OFF
-                </span>
-              )}
-
-              {outOfStock && (
-                <span className="stock-badge out-stock">Out of Stock</span>
-              )}
-              {!outOfStock && stockLow && (
-                <span className="stock-badge low-stock">Hurry! Only {product.stock_quantity} left</span>
-              )}
-
-              <div className="img-wrapper">
-                <img
-                  src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
-                  alt={product.product_name}
-                />
-              </div>
-              <div className="product-content">
-                <h5 className="product-title">
-                  {product.product_name.length > 15
-                    ? product.product_name.substring(0, 15) + "..."
-                    : product.product_name}
-                </h5>
-                <motion.div
-                  onClick={() => toggleFavorite(product.id)}
-                  initial={{ scale: 1 }}
-                  animate={{ scale: favorites.includes(product.id) ? 1.3 : 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileTap={{ scale: 0.9 }}
+        {/* Category-wise product sections */}
+        {/* Sort product sections based on category order */}
+        {categories
+          .filter((cat) => groupedProducts[cat.category_name]) // only include categories that have products
+          .map((cat) => {
+            const categoryName = cat.category_name;
+            const productList = groupedProducts[categoryName];
+            return (
+              <section
+                key={categoryName}
+                data-category={categoryName}
+                ref={(el) => (sectionRefs.current[categoryName] = el)}
+                className="mb-5"
+              >
+                <h2
                   style={{
-                    position: "absolute",
-                    top: "10px",
-                    right: "10px",
-                    cursor: "pointer",
-                    fontSize: "15px",
-                    zIndex: 50
+                    color: "#000000ff",
+                    display: "inline-block",
+                    paddingBottom: "4px",
+                    fontSize: "1.1rem",
+                    fontWeight: "700",
+                    marginBottom: "15px",
+                    textTransform: "uppercase",
                   }}
                 >
-                  {favorites.includes(product.id) ? (
-                    <motion.span
-                      animate={{ scale: [1, 1.4, 1] }}
-                      transition={{ duration: 0.3 }}
-                      style={{ color: "#e63946" }}
-                    >
-                      ❤️
-                    </motion.span>
-                  ) : (
-                    <span style={{ color: "#6c757d" }}>🤍</span>
-                  )}
-                </motion.div>
+                  {categoryName}
+                </h2>
 
-                <p className="product-desc">
-                  {product.product_description}
-                </p>
+                <div className="grid-container">
+                  {productList.map((product, idx) => {
+                    const hasOffer =
+                      product.offer_percentage &&
+                      Number(product.offer_percentage) > 0 &&
+                      product.offer_price;
 
-                <div className="product-price-wrap">
-                  {hasOffer ? (
-                    <>
-                      <span className="product-price-offer">
-                        ₹ {parseFloat(product.offer_price).toLocaleString()}
-                      </span>
-                      <span className="product-price-original">
-                        <s>₹ {parseFloat(product.price).toLocaleString()}</s>
-                      </span>
-                    </>
-                  ) : (
-                    <span className="product-price">
-                      ₹ {parseFloat(product.price).toLocaleString()}
-                    </span>
-                  )}
+                    const altCardClass = idx % 2 === 0 ? "card-even" : "card-odd";
+                    const outOfStock =
+                      !product.is_available || product.stock_quantity === 0;
+                    const stockLow =
+                      product.stock_quantity <= 10 && product.stock_quantity > 0;
 
+                    return (
+                      <div
+                        key={product.id}
+                        className={`product-card ${altCardClass}${outOfStock ? " out-of-stock" : ""}`}
+                        style={outOfStock ? { opacity: 0.5, pointerEvents: "none" } : { cursor: "pointer" }}
+                        onClick={() => {
+                          if (!outOfStock) navigate(`/product/${product.id}`);
+                        }}
+                      >
+
+                        {hasOffer && (
+                          <span className="offer-badge">
+                            {Math.round(product.offer_percentage)}% OFF
+                          </span>
+                        )}
+                        {outOfStock && (
+                          <span className="stock-badge out-stock">Out of Stock</span>
+                        )}
+                        {!outOfStock && stockLow && (
+                          <span className="stock-badge low-stock">
+                            Hurry! Only {product.stock_quantity} left
+                          </span>
+                        )}
+
+                        <div className="img-wrapper">
+                          <img
+                            src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
+                            alt={product.product_name}
+                          />
+                        </div>
+                        <div className="product-content">
+                          <h5 className="product-title">
+                            {product.product_name.length > 15
+                              ? product.product_name.substring(0, 15) + "..."
+                              : product.product_name}
+                          </h5>
+
+                          <motion.div
+                            onClick={(e) => {
+                              e.stopPropagation(); // ✅ prevent navigation
+                              toggleFavorite(product.id);
+                            }}
+                            initial={{ scale: 1 }}
+                            animate={{
+                              scale: favorites.includes(product.id) ? 1.15 : 1,
+                            }}
+                            transition={{ duration: 0.25 }}
+                            whileTap={{ scale: 0.9 }}
+                            style={{
+                              position: "absolute",
+                              top: "10px",
+                              right: "10px",
+                              cursor: "pointer",
+                              zIndex: 50,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "50%",
+                                backgroundColor: "rgba(255, 255, 255, 0.85)",
+                                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                transition: "all 0.3s ease",
+                                backdropFilter: "blur(3px)",
+                              }}
+                            >
+                              {favorites.includes(product.id) ? (
+                                <motion.span
+                                  animate={{ scale: [1, 1.3, 1] }}
+                                  transition={{ duration: 0.3 }}
+                                  style={{
+                                    color: "#e63946",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  ❤️
+                                </motion.span>
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "#6c757d",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  🤍
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+
+
+                          <p className="product-desc">{product.product_description}</p>
+
+                          <div className="product-price-wrap">
+                            {hasOffer ? (
+                              <>
+                                <span className="product-price-offer">
+                                  ₹ {parseFloat(product.offer_price).toLocaleString()}
+                                </span>
+                                <span className="product-price-original">
+                                  <s>
+                                    ₹ {parseFloat(product.price).toLocaleString()}
+                                  </s>
+                                </span>
+                              </>
+                            ) : (
+                              <span className="product-price">
+                                ₹ {parseFloat(product.price).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="product-btns">
+                   
+                          <button
+                            className="btn-buy"
+                            onClick={(e) => {
+                              e.stopPropagation(); // ✅ prevent card navigation
+                              addProduct(product);
+                            }}
+                            disabled={outOfStock}
+                            style={
+                              outOfStock
+                                ? { pointerEvents: "none", opacity: 0.7 }
+                                : {}
+                            }
+                          >
+                            {outOfStock ? "Out of Stock" : "Add to Cart"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div className="product-btns">
-                <Link
-                  to={outOfStock ? "#" : `/product/${product.id}`}
-                  className="btn-buy"
-                  tabIndex={outOfStock ? -1 : 0}
-                  style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-                >
-                  Buy Now
-                </Link>
-                <button
-                  className="btn-cart"
-                  onClick={() => addProduct(product)}
-                  disabled={outOfStock}
-                  style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-                >
-                  {outOfStock ? "Out of Stock" : "Add to Cart"}
-                </button>
+              </section>
+            );
+          })}
+
+      </>
+    );
+  };
 
 
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Pagination */}
-      <div className="pagination-container">
-        <button
-          className="btn-nav"
-          disabled={page === 1}
-          onClick={() => fetchProducts(page - 1, selectedCat ? selectedCat : null)}
-        >
-          ‹ Prev
-        </button>
-        <button
-          className="btn-nav"
-          disabled={page === totalPages}
-          onClick={() => fetchProducts(page + 1, selectedCat ? selectedCat : null)}
-        >
-          Next ›
-        </button>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <>
-          <div
-            className="modal-backdrop-themed"
-            onClick={() => setShowModal(false)}
-          ></div>
-
-          <div className="modal-content-themed" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setShowModal(false)}>
-              ×
-            </button>
-
-            <h5 className="modal-title-themed">All Categories</h5>
-
-            <div className="modal-body-themed">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  className={`cat-btn w-100 mb-2 ${selectedCat === cat.id ? "active" : ""
-                    }`}
-                  onClick={() => {
-                    setSelectedCat(cat.id);
-                    fetchProducts(1, cat.id);
-                    setShowModal(false);
-                  }}
-                >
-                  {cat.category_name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
 
   return (
     <div className="d-flex align-items-start">
       {/* Sidebar (desktop only) */}
-      <div className="d-none d-lg-block">
-        <CategorySidebar
-          categories={categories}
-          selectedCat={selectedCat}
-          handleCategory={(id) => {
-            setSelectedCat(id);
-            fetchProducts(1, id);
-          }}
-        />
+      <div className="d-flex align-items-start products-wrapper">
+        <div className="sidebar-follow">
+          <CategorySidebar
+            categories={categories}
+            selectedCat={selectedCat}
+            handleCategory={(id) => {
+              setSelectedCat(id);
+              const selectedCategory = categories.find((cat) => cat.id === id);
+              const sectionEl =
+                sectionRefs.current[selectedCategory?.category_name];
+              if (sectionEl) {
+                const yOffset = -100;
+                const y =
+                  sectionEl.getBoundingClientRect().top +
+                  window.pageYOffset +
+                  yOffset;
+                window.scrollTo({ top: y, behavior: "smooth" });
+              }
+            }}
+          />
+        </div>
+
+        <div className="flex-grow-1 container my-4 py-3">
+          <h2
+            id="product-title"
+            className="display-6 fw-bold text-center text-uppercase mb-4"
+            style={{ color: "#198754" }}
+          >
+            Our Products
+          </h2>
+          {loading ? <Loading /> : <ShowProducts />}
+        </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-grow-1 container my-4 py-3">
-        <h2
-          className="display-6 fw-bold text-center text-uppercase mb-4"
-          style={{ color: "#198754" }}
-        >
-          Our Products
-        </h2>
-        {loading ? <Loading /> : <ShowProducts />}
-      </div>
 
       <style>{`
+      /* --- Sticky Sidebar Follow --- */
+        .sidebar-follow {
+          position: sticky;
+          top: 90px; /* height of your navbar */
+          align-self: flex-start;
+          transition: all 0.3s ease;
+          z-index: 10;
+          scroll-behavior: smooth;
+        }
+
+        /* Scrollbar styling inside sidebar */
+        .sidebar-follow::-webkit-scrollbar {
+          width: 6px;
+        }
+        .sidebar-follow::-webkit-scrollbar-thumb {
+          background-color: #d8c6b2;
+          border-radius: 10px;
+        }
+        .sidebar-follow::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        /* Make sure it aligns correctly on desktop only */
+        @media (max-width: 992px) {
+          .sidebar-follow {
+            display: none;
+          }
+        }
+
+        /* Keep the two columns aligned */
+        .products-wrapper {
+          display: flex;
+          align-items: flex-start;
+          gap: 20px;
+        }
+
         /* Grid */
         .grid-container {
           display: grid;
@@ -391,11 +495,11 @@ const Products = () => {
 
         .offer-badge {
           position: absolute;
-          top: 133px;
-          right: 0;
-          background: linear-gradient(135deg, #ff4b2b, #ff416c);
+          top: 140px;
+          right: 150;
+          background: linear-gradient(135deg, #70a84d, #198754);
           color: #fff;
-          padding: 4px 10px;
+          padding: 2px 5px;
           font-size: 0.75rem;
           font-weight: 600;
           border-radius: 6px;
@@ -545,50 +649,7 @@ const Products = () => {
           .btn-buy, .btn-cart, .cat-btn, .btn-nav { padding: 4px 8px; font-size: 0.75rem; }
           .product-card { height: auto; }
         }
-
-        /* Modal */
-        .modal-backdrop-themed {
-          position: fixed;
-          inset: 0;
-          background-color: rgba(255, 249, 243, 0.8);
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          z-index: 1050;
-        }
-        .modal-content-themed {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 90%;
-          max-width: 400px;
-          background-color: #fffaf4;
-          border: 1.5px solid #e6d2b5;
-          border-radius: 14px;
-          box-shadow: 0 6px 18px rgba(122,86,58,0.16);
-          max-height: 80vh;
-          overflow-y: auto;
-          padding: 20px;
-          z-index: 1060;
-          display: flex;
-          flex-direction: column;
-        }
-        .modal-close-btn {
-          position: absolute;
-          top: 10px;
-          right: 12px;
-          background: none;
-          border: none;
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: #198754;
-          cursor: pointer;
-          transition: all 0.2s ease-in-out;
-          z-index: 10;
-        }
-        .modal-close-btn:hover { color: #198754; transform: scale(1.1); }
-        .modal-title-themed { font-size: 1.1rem; font-weight: 600; color: #198754; text-align: center; margin-bottom: 10px; }
-        .modal-body-themed { margin-top: 5px; display: flex; flex-direction: column; gap: 8px; }
+     
       `}</style>
     </div>
   );

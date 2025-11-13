@@ -143,6 +143,9 @@ const OrderTracking = () => {
               <strong>preferred Courier:</strong> {order.preferred_courier_service}
             </p>
             <p className="mb-1 text-theme-dark">
+              <strong>Courier Number:</strong> {order.courier_number}
+            </p>
+            <p className="mb-1 text-theme-dark">
               <strong>Ordered At:</strong> {new Date(order.ordered_at).toLocaleString()}
             </p>
             {order.delivered_at && (
@@ -266,7 +269,7 @@ const OrderTracking = () => {
         </div>
 
         <div className="text-center d-flex justify-content-center gap-3">
-          <Link to="/">
+          <Link to="/orderhistory">
             <button type="button" className="btn-themed">
               Back to Home
             </button>

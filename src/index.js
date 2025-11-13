@@ -35,6 +35,7 @@ import OfferModal from "./components/OfferModal";
 import PasswordReset from "./pages/PasswordReset";
 import PasswordResetConfirm from "./pages/PasswordResetConfirm";
 import FavoriteProducts from "./pages/Favorites";
+import SearchResults from "./pages/SearchResults";
 
 
 const AppContent = () => {
@@ -59,6 +60,7 @@ const AppContent = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/profile" element={<ProfileUpdateForm />} />
+        <Route path="/search" element={<SearchResults />} />
 
         {/* Protected Routes */}
         <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />

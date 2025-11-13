@@ -32,7 +32,7 @@ const Cart = () => {
           <h4 className="p-3 display-5" style={{ color: "#198754" }}>
             Your Cart is Empty
           </h4>
-          <Link to="/" className="btn btn-outline-themed mx-4">
+          <Link to="/product" className="btn btn-outline-themed mx-4">
             <i className="fa fa-arrow-left"></i> Continue Shopping
           </Link>
         </div>
@@ -157,7 +157,7 @@ useEffect(() => {
                               className="text-theme-muted mb-1"
                               style={{ fontSize: "0.9rem" }}
                             >
-                              ₹ {priceToUse.toLocaleString()} each{" "}
+                              ₹ {priceToUse.toLocaleString()} {" "}
                               {originalPrice && (
                                 <span style={{ fontSize: "0.8rem", textDecoration: "line-through", color: "#ff0000ff", marginLeft: "6px" }}>
                                   ₹ {originalPrice.toLocaleString()}

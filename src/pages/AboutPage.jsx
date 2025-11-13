@@ -2,10 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Footer, Navbar } from "../components";
 import api from "../utils/base_url";
 import '../styles/index.css';
+import { useNavigate } from "react-router-dom";
 
 const AboutPage = () => {
   const [categories, setCategories] = useState([]);
 
+  const navigate = useNavigate();
+  const handleCategoryClick = (categoryId) => {
+    // Navigate to products page with category ID as state
+    navigate("/product", { state: { categoryId } });
+  };
   // Fetch categories once
   useEffect(() => {
     const fetchCategories = async () => {
@@ -57,7 +63,13 @@ const AboutPage = () => {
         <div className="marquee-wrapper">
           <div className="marquee">
             {repeatedCategories.map((cat, index) => (
-              <div key={index} className="product-card">
+              <div
+                key={index}
+                className="product-card"
+                onClick={() => handleCategoryClick(cat.id)}
+                style={{ cursor: "pointer" }}
+              >
+
                 <div className="img-wrapper">
                   <img
                     src={

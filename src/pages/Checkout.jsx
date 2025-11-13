@@ -385,16 +385,51 @@ const Checkout = () => {
                     <div className="col-12 form-check my-2">
                       <input
                         type="checkbox"
-                        className="form-check-input themed-checkbox"
+                        className="form-check-input thick-checkbox"
                         name="sameAsBilling"
                         checked={formData.sameAsBilling}
                         onChange={handleChange}
                         id="sameAsBilling"
                       />
-                      <label htmlFor="sameAsBilling" className="form-check-label">
+                      <label htmlFor="sameAsBilling" className="form-check-label ms-2">
                         Shipping address same as billing
                       </label>
+
+                      <style>{`
+    /* Make checkbox border thicker and darker */
+    .thick-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid #198754 !important;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .thick-checkbox:checked {
+      background-color: #198754 !important;
+      border-color: #198754 !important;
+    }
+
+    .thick-checkbox:focus {
+      box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25);
+    }
+
+    .form-check-label {
+      font-size: 0.95rem;
+      color: #000;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .thick-checkbox {
+        width: 18px;
+        height: 18px;
+        border-width: 2px !important;
+      }
+    }
+  `}</style>
                     </div>
+
 
                     {/* Shipping Address */}
                     {!formData.sameAsBilling && (

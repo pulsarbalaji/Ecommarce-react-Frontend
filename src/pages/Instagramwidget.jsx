@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaInstagram } from "react-icons/fa";
 
-const INSTA_USERNAME = "kaavya_balamurugan";
+const INSTA_USERNAME = "village_kannama";
 
 const InstagramWidget = ({ inNavbar }) => {
   const [isMobile, setIsMobile] = useState(false);
