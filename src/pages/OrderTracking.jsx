@@ -63,6 +63,21 @@ const OrderTracking = () => {
   };
 
 
+  const formatStatus = (value) => {
+    if (!value) return "";
+    return value
+      .replace(/_/g, " ")            // replace underscore with space
+      .replace(/\b\w/g, char => char.toUpperCase()); // capitalize each word
+  };
+
+  const statusColors = {
+    pending: "bg-warning text-dark",
+    order_confirmed: "bg-info text-white",
+    shipped: "bg-primary text-white",
+    delivered: "bg-success",
+    cancelled: "bg-danger",
+    returned: "bg-secondary text-white"
+  };
 
 
   // Get order ID from URL
@@ -132,20 +147,21 @@ const OrderTracking = () => {
             <h4 className="mb-0 text-theme-dark text-center">Order Tracking</h4>
           </div>
           <div className="card-body">
-            <h5 className="text-theme-dark">Order Number#{order.order_number}</h5>
+            <h3 className="text-theme-dark">Order Number : {order.order_number}</h3>
             <p className="mb-1">
               <strong>Status:</strong>{" "}
-              <span className={`badge ${order.status === "delivered" ? "bg-success" : "bg-warning text-dark"} text-uppercase`}>
-                {order.status}
+              <span className={`badge ${statusColors[order.status] || "bg-dark text-white"}`}>
+                {formatStatus(order.status)}
               </span>
+
             </p>
-            <p className="mb-1 text-theme-dark">
-              <strong>preferred Courier:</strong> {order.preferred_courier_service}
+            <p className="mb-1 ">
+              <strong>Preferred Courier:</strong> {order.preferred_courier_service}
             </p>
-            <p className="mb-1 text-theme-dark">
+            <p className="mb-1">
               <strong>Courier Number:</strong> {order.courier_number}
             </p>
-            <p className="mb-1 text-theme-dark">
+            <p className="mb-1">
               <strong>Ordered At:</strong> {new Date(order.ordered_at).toLocaleString()}
             </p>
             {order.delivered_at && (
@@ -255,7 +271,7 @@ const OrderTracking = () => {
                 Subtotal <span>₹{order.subtotal.toLocaleString()}</span>
               </li>
               <li className="list-group-item d-flex justify-content-between px-0">
-                Tax <span>₹{order.tax.toLocaleString()}</span>
+                Tax {order.tax_percent.toLocaleString()}%<span>₹{order.tax.toLocaleString()}</span>
               </li>
               <li className="list-group-item d-flex justify-content-between px-0">
                 Shipping <span>₹{order.shipping_cost.toLocaleString()}</span>

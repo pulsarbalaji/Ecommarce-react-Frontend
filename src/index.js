@@ -61,11 +61,11 @@ const AppContent = () => {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/profile" element={<ProfileUpdateForm />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/product/:id" element={<Product />} />
+        <Route path="/cart" element={<Cart />} />
 
         {/* Protected Routes */}
-        <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-        <Route path="/product/:id" element={<ProtectedRoute><Product /></ProtectedRoute>} />
         <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
         <Route path="/order-tracking/:orderNumber" element={<ProtectedRoute><OrderTracking /></ProtectedRoute>} />
         <Route path="/orderhistory" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
@@ -92,6 +92,7 @@ root.render(
     <GoogleOAuthProvider clientId="894528088345-4e1pbin29dladn3uafe44450espqu0lk.apps.googleusercontent.com">
       <AuthProvider>
         <ScrollToTop>
+  <ScrollToTop />
           <Provider store={store}>
             <WhatsAppWidget />
             <InstagramWidget />

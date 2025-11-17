@@ -4,24 +4,37 @@ import { useSelector, useDispatch } from "react-redux";
 import { addCart, delCart } from "../redux/action";
 import { Link } from "react-router-dom";
 import api from "../utils/base_url";
-import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 import '../styles/index.css';
 
 const Cart = () => {
   const [shipping, setShipping] = useState(0);
   const [GST, setGST] = useState(0);
   const [stocks, setStocks] = useState({});
+  const [stockError, setStockError] = useState({});
+
   const state = useSelector((state) => state.handleCart);
   const dispatch = useDispatch();
 
   const addItem = (product) => {
-  const availableStock = stocks[product.id];
-  if (availableStock && product.qty >= availableStock) {
-    toast.error(`Only ${availableStock} in stock for ${product.product_name}`);
-    return;
-  }
-  dispatch(addCart(product));
-};
+    const availableStock = stocks[product.id];
+
+    if (availableStock && product.qty >= availableStock) {
+
+      // Show inline badge
+      setStockError(prev => ({ ...prev, [product.id]: true }));
+
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        setStockError(prev => ({ ...prev, [product.id]: false }));
+      }, 3000);
+
+      return;
+    }
+
+    dispatch(addCart(product));
+  };
+
 
   const removeItem = (product) => dispatch(delCart(product));
 
@@ -68,24 +81,24 @@ const Cart = () => {
     getGST();
   }, []);
 
-useEffect(() => {
-  const getStock = async () => {
-    try {
-      const stockData = {};
-      for (const item of state) {
-        const res = await api.get(`stock/?product_id=${item.id}`);
-        stockData[item.id] = res.data.stock; // assuming API returns { stock: number }
+  useEffect(() => {
+    const getStock = async () => {
+      try {
+        const stockData = {};
+        for (const item of state) {
+          const res = await api.get(`stock/?product_id=${item.id}`);
+          stockData[item.id] = res.data.stock; // assuming API returns { stock: number }
+        }
+        setStocks(stockData);
+      } catch (error) {
+        console.error("Stock fetch error:", error);
       }
-      setStocks(stockData);
-    } catch (error) {
-      console.error("Stock fetch error:", error);
-    }
-  };
+    };
 
-  if (state.length > 0) {
-    getStock();
-  }
-}, [state]);
+    if (state.length > 0) {
+      getStock();
+    }
+  }, [state]);
 
 
 
@@ -93,18 +106,18 @@ useEffect(() => {
   const ShowCart = () => {
     let subtotal = 0;
     const shippingCost = Number(shipping) || 0;
-    const gstPercent = Number(GST) || 0; 
+    const gstPercent = Number(GST) || 0;
     let totalItems = 0;
-    
+
     state.forEach((item) => {
       // Use offer price if available and valid else normal price
       const priceToUse =
-      item.offer_price && Number(item.offer_price) > 0
-      ? Number(item.offer_price)
-      : Number(item.price);
+        item.offer_price && Number(item.offer_price) > 0
+          ? Number(item.offer_price)
+          : Number(item.price);
       subtotal += priceToUse * item.qty;
       totalItems += item.qty;
-      
+
     });
     const gstAmount = (subtotal * gstPercent) / 100;
     const totalAmount = subtotal + gstAmount + shippingCost;
@@ -189,6 +202,7 @@ useEffect(() => {
                                 <i className="fas fa-plus"></i>
                               </button>
                             </div>
+
                             <p
                               className="text-theme-dark fw-bold mb-0 ps-3"
                               style={{
@@ -199,6 +213,36 @@ useEffect(() => {
                             >
                               ₹ {(priceToUse * item.qty).toLocaleString()}
                             </p>
+                            {stockError[item.id] && (
+                              <motion.div
+                                initial={{ x: 80, opacity: 0 }}
+                                animate={{
+                                  x: [80, 0, -6, 6, -6, 6, 0],
+                                  opacity: 1,
+                                }}
+                                transition={{
+                                  duration: 0.6,
+                                  ease: "easeOut",
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  bottom: "40px",
+                                  right: "-13px",
+                                  transform: "translateX(-50%)",
+                                  padding: "6px 14px",
+                                  background: "#dc3545",
+                                  color: "white",
+                                  borderRadius: "6px 0 0 6px",
+                                  fontSize: "0.8rem",
+                                  fontWeight: 600,
+                                  zIndex: 99,
+                                  whiteSpace: "nowrap",
+                                  boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+                                }}
+                              >
+                                Stock limit reached!
+                              </motion.div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -236,9 +280,28 @@ useEffect(() => {
                     </li>
                   </ul>
 
-                  <Link to="/checkout" className="btn-themed btn-lg w-100 text-center">
+                  <button
+                    className="btn-themed btn-lg w-100 text-center"
+                    onClick={() => {
+                      const token = sessionStorage.getItem("access");
+
+                      if (!token) {
+
+                        // store message for next page
+                        sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
+
+                        // immediately navigate
+                        window.location.href = "/login";
+                        return;
+                      }
+
+                      window.location.href = "/checkout";
+                    }}
+                  >
                     Go to checkout
-                  </Link>
+                  </button>
+
+
                 </div>
               </div>
             </div>

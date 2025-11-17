@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addCart } from "../redux/action";
+import { addCart, delCart } from "../redux/action";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +18,9 @@ const Products = () => {
   const [selectedCat, setSelectedCat] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
+  const [stockError, setStockError] = useState({});
+
+
 
   const sectionRefs = useRef({});
   const { user } = useAuth();
@@ -27,30 +30,6 @@ const Products = () => {
 
   const state = useSelector((state) => state.handleCart);
 
-  const addProduct = (product) => {
-    if (!user) {
-      toast.error("Please login first!");
-      navigate("/login");
-      return;
-    }
-
-    if (!product.is_available || product.stock_quantity === 0) {
-      toast.error("This product is out of stock!");
-      return;
-    }
-
-    // Check current quantity of this product in cart (from Redux)
-    const cartItem = state.find((item) => item.id === product.id);
-    const currentQty = cartItem ? cartItem.qty : 0;
-
-    if (currentQty >= product.stock_quantity) {
-      toast.error(`Only ${product.stock_quantity} in stock`);
-      return;
-    }
-
-    dispatch(addCart(product));
-    toast.success("Added to cart");
-  };
 
   const toggleFavorite = async (productId) => {
     if (!user) {
@@ -119,36 +98,58 @@ const Products = () => {
     }
   }, [fetchCategories, fetchProducts, fetchFavorites, location.state]);
 
+  const badgeStyle = {
+    position: "absolute",
+    top: "8px",
+    left: "30%",
+    transform: "translateX(-50%)",
+    padding: "6px 14px",
+    background: "#dc3545",
+    color: "white",
+    borderRadius: "20px",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    zIndex: 99,
+    whiteSpace: "nowrap",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+  };
+
   useEffect(() => {
-    if (!products.length || !categories.length) return;
+    if (!categories.length || !products.length) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the first visible section
-        const visible = entries.find((entry) => entry.isIntersecting);
-        if (visible) {
-          const categoryName = visible.target.getAttribute("data-category");
-          const catObj = categories.find(
-            (cat) => cat.category_name === categoryName
-          );
-          if (catObj && selectedCat !== catObj.id) {
-            setSelectedCat(catObj.id); // ✅ auto-select sidebar category
-          }
+    const handleScroll = () => {
+      let currentCategory = null;
+      let minDistance = Number.POSITIVE_INFINITY;
+
+      Object.entries(sectionRefs.current).forEach(([catName, sectionEl]) => {
+        if (!sectionEl) return;
+
+        const rect = sectionEl.getBoundingClientRect();
+        const distance = Math.abs(rect.top - 120); // 120px below navbar
+
+        // Only consider sections that are ABOVE or very close to top
+        if (rect.top <= 120 && distance < minDistance) {
+          minDistance = distance;
+          currentCategory = catName;
         }
-      },
-      {
-        root: null,
-        rootMargin: "0px 0px -65% 0px",
-        threshold: 0.2, // adjust for sensitivity
+      });
+
+      if (currentCategory) {
+        const catObj = categories.find(c => c.category_name === currentCategory);
+        if (catObj && selectedCat !== catObj.id) {
+          setSelectedCat(catObj.id);
+        }
       }
-    );
+    };
 
-    Object.values(sectionRefs.current).forEach((section) => {
-      if (section) observer.observe(section);
-    });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
-    return () => observer.disconnect();
+    // Trigger once on load
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [categories, products, selectedCat]);
+
 
   useEffect(() => {
     const categoryId = location.state?.categoryId;
@@ -181,12 +182,59 @@ const Products = () => {
   const Loading = () => (
     <div className="grid-container">
       {[...Array(6)].map((_, idx) => (
-        <div key={idx} className="skeleton-card">
-          <Skeleton height={280} />
+        <div key={idx} className="product-card skeleton-card" style={{ padding: "12px" }}>
+
+          {/* Image Skeleton */}
+          <Skeleton height={140} style={{ borderRadius: "10px" }} />
+
+          {/* Title */}
+          <Skeleton height={20} width={120} style={{ marginTop: "12px" }} />
+
+          {/* Description (3 lines) */}
+          <Skeleton height={12} width="90%" />
+          <Skeleton height={12} width="85%" />
+          <Skeleton height={12} width="80%" />
+
+          {/* Price */}
+          <Skeleton height={20} width={90} style={{ marginTop: "12px" }} />
+
+          {/* Button / Qty */}
+          <Skeleton height={35} width="60%" style={{ margin: "10px auto" }} />
         </div>
       ))}
     </div>
   );
+
+
+  const getCartQty = (productId) => {
+    const item = state.find((p) => p.id === productId);
+    return item ? item.qty : 0;
+  };
+
+  const addItem = (product) => {
+    const availableStock = product.stock_quantity;
+
+    if (availableStock && getCartQty(product.id) >= availableStock) {
+
+      // Show error badge
+      setStockError(prev => ({ ...prev, [product.id]: true }));
+
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        setStockError(prev => ({ ...prev, [product.id]: false }));
+      }, 3000);
+
+      return;
+    }
+
+    dispatch(addCart(product));
+  };
+
+
+
+  const removeItem = (product) => {
+    dispatch(delCart(product));
+  };
 
 
   const ShowProducts = () => {
@@ -267,10 +315,36 @@ const Products = () => {
                           </span>
                         )}
 
+                        {stockError[product.id] && (
+                          <motion.div
+                            initial={{ x: 100, opacity: 0 }}
+                            animate={{
+                              x: [100, 0, -6, 6, -6, 6, 0],  // slide in + shake
+                              opacity: 1,
+                            }}
+                            transition={{
+                              duration: 0.6,
+                              ease: "easeOut",
+                            }}
+                            exit={{
+                              x: -100,
+                              opacity: 0,
+                              transition: { duration: 0.3 }
+                            }}
+                            style={badgeStyle}
+                          >
+                            Stock limit reached!
+                          </motion.div>
+
+
+                        )}
+
+
                         <div className="img-wrapper">
                           <img
                             src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
                             alt={product.product_name}
+                            style={{ backgroundColor: "#fff9f3" }}
                           />
                         </div>
                         <div className="product-content">
@@ -360,22 +434,39 @@ const Products = () => {
                           </div>
                         </div>
                         <div className="product-btns">
-                   
-                          <button
-                            className="btn-buy"
-                            onClick={(e) => {
-                              e.stopPropagation(); // ✅ prevent card navigation
-                              addProduct(product);
-                            }}
-                            disabled={outOfStock}
-                            style={
-                              outOfStock
-                                ? { pointerEvents: "none", opacity: 0.7 }
-                                : {}
-                            }
-                          >
-                            {outOfStock ? "Out of Stock" : "Add to Cart"}
-                          </button>
+
+                          <div className="product-btns" onClick={(e) => e.stopPropagation()}>
+                            {product.stock_quantity === 0 ? (
+                              <span className="out-stock-label">Out of Stock</span>
+                            ) : getCartQty(product.id) === 0 ? (
+                              <button
+                                className="btn-buy"
+                                onClick={() => addItem(product)}
+                              >
+                                Add to Cart
+                              </button>
+                            ) : (
+                              <div className="qty-box">
+                                <button
+                                  className="qty-btn"
+                                  onClick={() => removeItem(product)}
+                                >
+                                  <i className="fas fa-minus"></i>
+                                </button>
+
+                                <span className="qty-value">{getCartQty(product.id)}</span>
+
+                                <button
+                                  className="qty-btn"
+                                  onClick={() => addItem(product)}
+                                >
+                                  <i className="fas fa-plus"></i>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+
                         </div>
                       </div>
                     );
@@ -400,19 +491,29 @@ const Products = () => {
             categories={categories}
             selectedCat={selectedCat}
             handleCategory={(id) => {
-              setSelectedCat(id);
-              const selectedCategory = categories.find((cat) => cat.id === id);
-              const sectionEl =
-                sectionRefs.current[selectedCategory?.category_name];
-              if (sectionEl) {
-                const yOffset = -100;
-                const y =
-                  sectionEl.getBoundingClientRect().top +
-                  window.pageYOffset +
-                  yOffset;
-                window.scrollTo({ top: y, behavior: "smooth" });
+              const selectedCategory = categories.find(cat => cat.id === id);
+              const sectionEl = sectionRefs.current[selectedCategory?.category_name];
+
+              // CHECK: Does this category have any products ??
+              const hasProducts = !!sectionEl;
+
+              if (!hasProducts) {
+                toast.error("No products available in this category!");
+                return; // ❌ Stop scrolling
               }
+
+              // If products exist → proceed normally
+              setSelectedCat(id);
+
+              const yOffset = -100;
+              const y =
+                sectionEl.getBoundingClientRect().top +
+                window.pageYOffset +
+                yOffset;
+
+              window.scrollTo({ top: y, behavior: "smooth" });
             }}
+
           />
         </div>
 
@@ -430,6 +531,19 @@ const Products = () => {
 
 
       <style>{`
+
+        .skeleton-card {
+        background: #fff9f3;
+        border-radius: 12px;
+        border: 1.5px solid #e6d2b5;
+        height: 340px;          /* Match exact card height */
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        gap: 8px;
+      }
+
+
       /* --- Sticky Sidebar Follow --- */
         .sidebar-follow {
           position: sticky;
@@ -496,15 +610,15 @@ const Products = () => {
         .offer-badge {
           position: absolute;
           top: 140px;
-          right: 150;
+          right: 160;
           background: linear-gradient(135deg, #70a84d, #198754);
           color: #fff;
           padding: 2px 5px;
           font-size: 0.75rem;
           font-weight: 600;
-          border-radius: 6px;
+          border-radius: 0 6px 6px 0;
           box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-          z-index: 5;
+          z-index: 10;
         }
         .stock-badge {
           position: absolute;
@@ -515,7 +629,7 @@ const Products = () => {
           padding: 4px 10px;
           font-size: 0.75rem;
           font-weight: 600;
-          border-radius: 6px;
+          border-radius: 0 6px 6px 0;
           box-shadow: 0 1px 4px rgba(0,0,0,0.13);
           z-index: 6;
         }
@@ -536,7 +650,7 @@ const Products = () => {
           justify-content: center;
         }
         .img-wrapper img { width: 80%; height: 100%; object-fit: contain; transition: transform 0.3s ease; }
-        .product-card:hover img { transform: scale(1.05); }
+        .product-card:hover img { transform: scale(1.15); }
 
         .product-content {
           text-align: center;
@@ -560,10 +674,6 @@ const Products = () => {
         max-height: calc(1.25rem * 3);  /* ensures only 3 visible lines */
         margin-top: 4px;
       }
-
-
-
-
         .product-price-wrap {
           display: flex;
           align-items: baseline;
@@ -572,7 +682,7 @@ const Products = () => {
           margin-top: 6px;
           white-space: nowrap;
         }
-        .product-price { color: rgb(112,168,77); font-weight: bold; font-size: 1rem; }
+        .product-price { color: rgba(0, 0, 0, 1); font-weight: bold; font-size: 1rem; }
         .product-price-original { color: #dc3545; font-size: 0.93rem; }
         .product-price-offer { color: #198754; font-size: 1.17rem; font-weight: 700; }
 
@@ -607,6 +717,7 @@ const Products = () => {
           background-color: #f1e6d4;
           color: #198754;
         }
+          
         .btn-cart:disabled, .btn-cart[disabled] {
           background-color: #ddd !important;
           color: #888 !important;
@@ -633,6 +744,7 @@ const Products = () => {
           margin-top: 30px;
           gap: 15px;
         }
+
         .btn-nav {
           background: #198754;
           color: white;
@@ -642,6 +754,7 @@ const Products = () => {
           font-size: 0.9rem;
           transition: all 0.3s ease;
         }
+
         .btn-nav:hover { background: #95b25a; }
         .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -649,7 +762,46 @@ const Products = () => {
           .btn-buy, .btn-cart, .cat-btn, .btn-nav { padding: 4px 8px; font-size: 0.75rem; }
           .product-card { height: auto; }
         }
-     
+
+      .qty-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff;
+        border: 1.5px solid #198754;
+        border-radius: 25px;
+        padding: 4px 10px;
+      }
+
+      .qty-btn {
+        background: #198754;
+        color: white;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .qty-value {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #198754;
+      }
+
+      .out-stock-label {
+        background: #dc3545;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+      }
       `}</style>
     </div>
   );

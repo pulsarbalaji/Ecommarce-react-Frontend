@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addCart } from "../redux/action";
+import { addCart, delCart } from "../redux/action";
+import { motion } from "framer-motion";
 import { Footer, Navbar } from "../components";
+import { AuthContext } from "../context/AuthContext";
 import api from "../utils/base_url";
 import toast from "react-hot-toast";
 
@@ -22,38 +24,76 @@ const Product = () => {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [feedbackProductId, setFeedbackProductId] = useState(null);
   const [showDescModal, setShowDescModal] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const [stockError, setStockError] = useState({});
+
 
 
 
 
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
+  const state = useSelector((state) => state.handleCart);
 
   const dispatch = useDispatch();
-  const cart = useSelector((s) => s.handleCart || []); // read current cart from redux
 
-  // Add to cart with stock checks
-  const addProduct = (prod) => {
-    const productId = prod.id;
-    const availableStock = Number(stocks[productId] ?? prod.stock_quantity ?? 0);
+  const badgeStyleCurrent = {
+    position: "absolute",
+    top: "8px",
+    right: "-12px",
+    transform: "translateX(-50%)",
+    padding: "6px 14px",
+    background: "#dc3545",
+    color: "white",
+    borderRadius: "20px",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    zIndex: 99,
+    whiteSpace: "nowrap",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+  };
+const badgeStyleSimullar = {
+  position: "absolute",
+  top: "15px",
+  left: "1px",
+  padding: "4px 10px",
+  background: "#dc3545",
+  color: "#fff",
+  borderRadius: "0 6px 6px 0",  // Perfect pill shape
+  fontSize: "0.72rem",    // Clean small text
+  fontWeight: 600,
+  zIndex: 999,
+  whiteSpace: "nowrap",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  pointerEvents: "none",  // prevents blocking clicks
+};
 
-    if (availableStock <= 0) {
-      toast.error(`${prod.product_name} is out of stock`);
-      return;
-    }
-
-    const existingItem = cart.find((i) => Number(i.id) === Number(productId));
-    const currentQty = existingItem ? Number(existingItem.qty) : 0;
-
-    if (currentQty >= availableStock) {
-      toast.error(`Only ${availableStock} in stock for ${prod.product_name}`);
-      return;
-    }
-
-    dispatch(addCart(prod));
-    toast.success("Added to cart");
+  const getCartQty = (productId) => {
+    const item = state.find((p) => p.id === productId);
+    return item ? item.qty : 0;
   };
 
+  const addItem = (product) => {
+    const availableStock = product.stock_quantity;
+
+    if (availableStock && getCartQty(product.id) >= availableStock) {
+      setStockError(prev => ({ ...prev, [product.id]: true }));
+
+      setTimeout(() => {
+        setStockError(prev => ({ ...prev, [product.id]: false }));
+      }, 3000);
+
+      return;
+    }
+
+    dispatch(addCart(product));
+  };
+
+  const removeItem = (product) => {
+    dispatch(delCart(product));
+  };
   // Fetch main product and similar products
   useEffect(() => {
     const fetchProduct = async () => {
@@ -74,6 +114,16 @@ const Product = () => {
 
         setLoading(false);
 
+        if (user?.id && data?.id) {
+
+          try {
+            const favRes = await api.get(`/favorites/ids/?auth_id=${user.id}&product_id=${data.id}`);
+            setIsFavorite(favRes.data?.is_favorite === true);
+          } catch { }
+        }
+
+
+
         if (data?.category) {
           const resSimilar = await api.get(`/productfilter/${data.category}/?page=1`);
           const dataSimilar = resSimilar.data?.data || [];
@@ -91,7 +141,27 @@ const Product = () => {
     };
 
     if (id) fetchProduct();
-  }, [id]);
+  }, [id, user?.id]);
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      toast.error("Please login first!");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await api.post(`/favorites/toggle/`, {
+        product_id: product.id,
+        auth_id: user.id
+      });
+
+      setIsFavorite(res.data?.is_favorite);
+      toast.success(res.data?.is_favorite ? "Added to favorites ❤️" : "Removed from favorites");
+    } catch (err) {
+      toast.error("Failed, please try again");
+    }
+  };
 
   // Fetch stock for main product + similar products
   useEffect(() => {
@@ -171,6 +241,63 @@ const Product = () => {
         <div className="row align-items-center">
           <div className="col-md-6 col-sm-12 py-3 text-center">
             <div className="product-image-wrapper" style={{ position: "relative" }}>
+              {/* ❤️ Favorite Button */}
+              {user && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite();
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: "12px",
+                    right: "12px",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                    cursor: "pointer",
+                    zIndex: 50,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      color: "#e63946",
+                      transition: "transform 0.2s ease",
+                      transform: isFavorite ? "scale(1.1)" : "scale(1)",
+                    }}
+                  >
+                    {isFavorite ? "❤️" : "🤍"}
+                  </span>
+                </div>
+              )}
+              {stockError[product.id] && (
+                <motion.div
+                  initial={{ x: 80, opacity: 0 }}
+                  animate={{
+                    x: [80, 0, -6, 6, -6, 6, 0],
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    ease: "easeOut",
+                  }}
+                  exit={{
+                    x: -80,
+                    opacity: 0,
+                    transition: { duration: 0.3 },
+                  }}
+                  style={badgeStyleCurrent}
+                >
+                  Stock limit reached!
+                </motion.div>
+              )}
+
               <img
                 className="img-fluid"
                 src={`${process.env.REACT_APP_API_URL}${product.product_image}`}
@@ -183,6 +310,11 @@ const Product = () => {
               {!outOfStock && stockLow && (
                 <span className="stock-badge low-stock">
                   Hurry! Only {available} left
+                </span>
+              )}
+              {hasOffer && (
+                <span className="offer-badge">
+                  {Math.round(product.offer_percentage)}% OFF
                 </span>
               )}
             </div>
@@ -266,22 +398,55 @@ const Product = () => {
 
 
             <div className="d-flex flex-wrap">
-              <button
-                className="btn-green-outline me-2 mb-2"
-                onClick={() => addProduct(product)}
-                disabled={outOfStock}
-                style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-              >
-                Add to Cart
-              </button>
-              <Link
-                to="/cart"
-                className="btn-green mb-2"
-                tabIndex={outOfStock ? -1 : 0}
-                style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-              >
-                Go to Cart
-              </Link>
+              <div className="product-btns" onClick={(e) => e.stopPropagation()}>
+                {product.stock_quantity === 0 ? (
+                  <span className="out-stock-label">Out of Stock</span>
+                ) : getCartQty(product.id) === 0 ? (
+                  <button
+                    className="btn-green mb-2"
+                    onClick={() => addItem(product)}
+                  >
+                    Add to Cart
+                  </button>
+                ) : (
+                  <div className="qty-box">
+                    <button
+                      className="qty-btn"
+                      onClick={() => removeItem(product)}
+                    >
+                      <i className="fas fa-minus"></i>
+                    </button>
+
+                    <span className="qty-value">{getCartQty(product.id)}</span>
+
+                    <button
+                      className="qty-btn"
+                      onClick={() => addItem(product)}
+                    >
+                      <i className="fas fa-plus"></i>
+                    </button>
+                  </div>
+                )}
+                <button
+                  className="btn-green mb-2"
+                  onClick={() => {
+                    const token = sessionStorage.getItem("access");
+
+                    if (!token) {
+                      sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
+                      setTimeout(() => {
+                        window.location.href = "/login";
+                      }, 800);
+                      return;
+                    }
+
+                    window.location.href = "/checkout";
+                  }}
+                >
+                  Go to checkout
+                </button>
+
+              </div>
             </div>
           </div>
         </div>
@@ -327,18 +492,40 @@ const Product = () => {
               }}
             >
               {hasOffer && (
-                <div className="offer-badge">
+                <div className="simullar-offer-badge">
                   {Math.round(item.offer_percentage)}% OFF
                 </div>
               )}
               {outOfStock && (
-                <span className="stock-badge out-stock">Out of Stock</span>
+                <span className="simullar-stock-badge out-stock">Out of Stock</span>
               )}
               {!outOfStock && stockLow && (
-                <span className="stock-badge low-stock">
+                <span className="simullar-stock-badge low-stock">
                   Hurry! Only {available} left
                 </span>
               )}
+              {stockError[item.id] && (
+                <motion.div
+                  initial={{ x: 80, opacity: 0 }}
+                  animate={{
+                    x: [80, 0, -6, 6, -6, 6, 0],
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    ease: "easeOut",
+                  }}
+                  exit={{
+                    x: -80,
+                    opacity: 0,
+                    transition: { duration: 0.3 },
+                  }}
+                  style={badgeStyleSimullar}
+                >
+                  Stock limit reached!
+                </motion.div>
+              )}
+
               <div className="p-2 bg-light rounded position-relative">
                 <img
                   className="card-img-top"
@@ -372,17 +559,37 @@ const Product = () => {
                 </p>
 
                 <div className="d-flex justify-content-center flex-wrap">
-                  <button
-                    className="btn-green btn-sm mb-2"
-                    onClick={(e) => {
-                      e.stopPropagation(); // ✅ Prevent navigation when adding to cart
-                      addProduct(item);
-                    }}
-                    disabled={outOfStock}
-                    style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-                  >
-                    Add to cart
-                  </button>
+                  <div className="product-btns" onClick={(e) => e.stopPropagation()}>
+                    {item.stock_quantity === 0 ? (
+                      <span className="out-stock-label">Out of Stock</span>
+                    ) : getCartQty(item.id) === 0 ? (
+                      <button
+                        className="btn-green mb-2"
+                        onClick={() => addItem(item)}
+                      >
+                        Add to Cart
+                      </button>
+                    ) : (
+                      <div className="qty-box">
+                        <button
+                          className="qty-btn"
+                          onClick={() => removeItem(item)}
+                        >
+                          <i className="fas fa-minus"></i>
+                        </button>
+
+                        <span className="qty-value">{getCartQty(item.id)}</span>
+
+                        <button
+                          className="qty-btn"
+                          onClick={() => addItem(item)}
+                        >
+                          <i className="fas fa-plus"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -452,14 +659,14 @@ const Product = () => {
 
         .stock-badge {
           position: absolute;
-          left: 10px;
-          bottom: 115px;
+          left: 1px;
+          bottom: 340px;
           background: #ffc107;
           color: #7a563a;
           padding: 4px 12px;
           font-size: 0.85rem;
           font-weight: 600;
-          border-radius: 6px;
+          border-radius: 0 6px 6px 0;
           box-shadow: 0 1px 4px rgba(0,0,0,0.14);
           z-index: 9;
         }
@@ -472,6 +679,41 @@ const Product = () => {
           color: #fff;
         }
         .offer-badge {
+          position: absolute;
+          top: 60px;
+          right: 0;
+          background: linear-gradient(135deg, #70a84d, #198754);
+          color: #fff;
+          padding: 6px 15px;
+          font-size: 1rem;
+          font-weight: 600;
+          border-radius: 6px 0 0 6px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+          z-index: 5;
+        }
+
+        .simullar-stock-badge {
+          position: absolute;
+          left: 1px;
+          bottom: 220px;
+          background: #ffc107;
+          color: #7a563a;
+          padding: 2px 6px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          border-radius: 0 6px 6px 0;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+          z-index: 9;
+        }
+        .simullar-stock-badge.low-stock {
+          background: #ffc107;
+          color: #000000ff;
+        }
+        .simullar-stock-badge.out-stock {
+          background: #dc3545;
+          color: #fff;
+        }
+        .simullar-offer-badge {
           position: absolute;
           top: 10px;
           right: 0;
@@ -513,7 +755,7 @@ const Product = () => {
           position: relative;
         }
         .product-card-theme:hover {
-          transform: scale(1.05);
+          transform: scale(1.09);
           box-shadow: 0 7px 18px rgba(112,168,77,0.2);
         }
         .btn-green {
@@ -686,6 +928,12 @@ const Product = () => {
           align-items: center;
           z-index: 99999; /* 🟢 ensure it's above Navbar/Footer */
         }
+           .product-btns {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          padding-bottom: 10px;
+        }
 
         .desc-modal-content {
           background: #fffaf4;
@@ -729,7 +977,96 @@ const Product = () => {
           transition: all 0.3s ease;
         }
 
+        /* ================================
+   ADD TO CART BUTTON
+================================ */
+.btn-buy {
+  background-color: rgb(112,168,77);
+  color: #fff !important;
+  border: none;
+  border-radius: 25px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
 
+.btn-buy:hover {
+  background-color: #95b25a;
+  transform: translateY(-1px);
+}
+
+.btn-buy:disabled,
+.btn-buy[disabled] {
+  background-color: #ddd !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+
+/* ================================
+   OUT OF STOCK TAG
+================================ */
+.out-stock-label {
+  background: #dc3545;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+
+/* ================================
+   QUANTITY BOX ( + / – )
+================================ */
+.qty-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  height: 36px;                 /* SAME height as your buttons */
+  padding: 0 14px;              /* SAME horizontal padding  */
+  background: #fff;
+  border: 1.5px solid #198754;
+  border-radius: 25px;          /* SAME pill radius */
+}
+
+.qty-btn {
+  width: 28px;
+  height: 28px;
+
+  background: #198754;  /* SAME GREEN as .btn-green */
+  color: #fff !important;
+
+  border: none;
+  border-radius: 50%;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qty-btn:hover {
+  background-color: #198754; /* SAME hover color */
+  transform: scale(1.1);
+}
+
+.qty-value {
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 22px;
+  text-align: center;
+  color: #198754;
+}
 
       `}</style>
 

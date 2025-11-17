@@ -39,33 +39,38 @@ const Footer = ({ categories = [] }) => {
   }
 
   // Smooth scroll function (navigates to category section)
-  const scrollToCategory = (categoryName) => {
-    const section = document.querySelector(`[data-category="${categoryName}"]`);
-    if (section) {
-      const yOffset = -100; // adjust for navbar height
-      const y =
-        section.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
-  };
+  // const scrollToCategory = (categoryName) => {
+  //   const section = document.querySelector(`[data-category="${categoryName}"]`);
+  //   if (section) {
+  //     const yOffset = -100; // adjust for navbar height
+  //     const y =
+  //       section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+  //     window.scrollTo({ top: y, behavior: "smooth" });
+  //   }
+  // };
 
   return (
     <footer className="footer-wrapper">
       {/* === MAP === */}
-      <div className="map-container">
+      <div className="map-wrapper">
         <iframe
           title="Shop Location"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3911.517913663213!2d77.75277587458814!3d11.317716388872738!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba96f0025b3f179%3A0x24ec0f94a84cd27f!2sVallalar%20Natural%E2%80%99s!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+          src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3908.817881178193!2d79.56427387505359!3d11.564909888635887!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTHCsDMzJzUzLjciTiA3OcKwMzQnMDAuNyJF!5e0!3m2!1sen!2sin!4v1763051572292!5m2!1sen!2sin"
           width="100%"
           height="300"
           style={{ border: 0 }}
           allowFullScreen=""
           loading="lazy"
         ></iframe>
+
+        {/* Overlay */}
+        <div className="map-overlay">
+          <span>Find Us Here</span>
+        </div>
       </div>
 
       {/* === COLLECTION === */}
-      <div className="collection-section container py-5">
+      {/* <div className="collection-section container py-5">
         <h3 className="text-center mb-4 fw-bold text-success">Collection</h3>
 
         {chunkedCategories.length > 0 ? (
@@ -85,7 +90,7 @@ const Footer = ({ categories = [] }) => {
         ) : (
           <p className="text-center text-muted">Loading categories...</p>
         )}
-      </div>
+      </div> */}
 
       {/* === CONTACT INFO === */}
       <div className="footer-info container py-4">
@@ -249,6 +254,50 @@ const Footer = ({ categories = [] }) => {
         .insta-icon svg {
           display: block;
         }
+
+        /* ================================
+   MAP OVERLAY
+================================ */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.map-wrapper iframe {
+  width: 100%;
+  height: 100%;
+}
+
+/* Overlay visible until user hovers */
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  background: rgba(0, 0, 0, 0.5); /* 50% transparent black */
+  color: white;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* Allow clicking map after hover */
+}
+
+/* On hover → hide overlay */
+.map-wrapper:hover .map-overlay {
+  opacity: 0;
+}
+
 
       `}</style>
     </footer>

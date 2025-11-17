@@ -33,7 +33,7 @@ const SearchResults = () => {
     const handleChange = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
-        if (value.trim().length > 1) fetchSearchResults(value);
+        if (value.trim().length >= 1) fetchSearchResults(value);
         else setResults([]);
     };
 
@@ -193,14 +193,14 @@ const SearchResults = () => {
                     )}
 
                     {/* Bottom Back Button */}
-                    <div className="text-center mt-4">
+                    {/* <div className="text-center mt-4">
                         <button
                             className="btn-themed"
                             onClick={() => navigate(-1)}
                         >
                             BACK
                         </button>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* --- Right Section (Offers) --- */}

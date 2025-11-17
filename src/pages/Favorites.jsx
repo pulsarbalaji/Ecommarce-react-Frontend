@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import api from "../utils/base_url";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Footer, Navbar } from "../components";
@@ -97,9 +97,32 @@ const Favorites = () => {
                     <>
                         <div className="grid-container">
                             {favorites.length === 0 ? (
-                                <div className="empty-msg text-center w-100 p-5" style={{ color: "#998866" }}>
-                                    No favorite products yet.
+                                <div
+                                    className="empty-wrapper"
+                                    style={{
+                                        gridColumn: "1 / -1",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        minHeight: "150px",
+                                        padding: "20px 0",
+                                    }}
+                                >
+                                    <h3
+                                        className="empty-text"
+                                        style={{
+                                            color: "#198754",
+                                            whiteSpace: "nowrap",
+                                            margin: 0,
+                                            fontSize: "1.8rem",
+                                            fontWeight: "600",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        No favorite products yet.
+                                    </h3>
                                 </div>
+
                             ) : favorites.map((product, idx) => {
                                 const hasOffer = product.offer_percentage && Number(product.offer_percentage) > 0 && product.offer_price;
                                 const outOfStock = !product.is_available || product.stock_quantity === 0;
@@ -110,6 +133,9 @@ const Favorites = () => {
                                     <div key={product.id}
                                         className={`product-card ${altCardClass}${outOfStock ? " out-of-stock" : ""}`}
                                         style={outOfStock ? { opacity: 0.5, pointerEvents: "none" } : {}}
+                                        onClick={() => {
+                                            if (!outOfStock) navigate(`/product/${product.id}`);
+                                        }}
                                     >
                                         {hasOffer && (
                                             <span className="offer-badge">
@@ -140,20 +166,31 @@ const Favorites = () => {
                                                     ? product.product_name.substring(0, 15) + "..."
                                                     : product.product_name}
                                             </h5>
-
                                             <div
-                                                onClick={() => toggleFavorite(product.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFavorite(product.id);
+                                                }}
                                                 style={{
                                                     position: "absolute",
                                                     top: "10px",
                                                     right: "10px",
+                                                    width: "26px",
+                                                    height: "26px",
+                                                    borderRadius: "50%",
+                                                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                                                     cursor: "pointer",
-                                                    fontSize: "16px",
                                                     zIndex: 50,
                                                 }}
                                             >
-                                                ❤️
+                                                <span style={{ fontSize: "12px", color: "#e63946" }}>❤️</span>
                                             </div>
+
+
 
                                             <p className="product-desc">{product.product_description}</p>
 
@@ -172,18 +209,13 @@ const Favorites = () => {
                                         </div>
 
                                         <div className="product-btns">
-                                            <Link
-                                                to={outOfStock ? "#" : `/product/${product.id}`}
-                                                className="btn-buy"
-                                                style={outOfStock ? { pointerEvents: "none", opacity: 0.7 } : {}}
-                                            >
-                                                Buy Now
-                                            </Link>
-
                                             <button
-                                                className="btn-cart"
+                                                className="btn-buy"
                                                 disabled={outOfStock}
-                                                onClick={() => addProduct(product)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // ✅ prevent card navigation
+                                                    addProduct(product);
+                                                }}
                                             >
                                                 {outOfStock ? "Out of Stock" : "Add to Cart"}
                                             </button>
@@ -379,6 +411,7 @@ const Favorites = () => {
           display: flex;
           justify-content: center;
           margin-top: 30px;
+          margin-bottom: 40px;
           gap: 15px;
         }
         .btn-nav {
@@ -441,6 +474,36 @@ const Favorites = () => {
         .modal-close-btn:hover { color: #198754; transform: scale(1.1); }
         .modal-title-themed { font-size: 1.1rem; font-weight: 600; color: #198754; text-align: center; margin-bottom: 10px; }
         .modal-body-themed { margin-top: 5px; display: flex; flex-direction: column; gap: 8px; }
+
+        .empty-wrapper {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 150px;
+        }
+
+        .empty-text {
+        color: #198754;
+        white-space: nowrap;
+        font-size: 1.8rem;
+        font-weight: 600;
+        text-align: center;
+        }
+
+        /* MOBILE FIX */
+        @media (max-width: 600px) {
+        .empty-wrapper {
+            min-height: 120px;   /* slightly smaller */
+        }
+
+        .empty-text {
+            font-size: 1.3rem;   /* smaller mobile size */
+            white-space: normal; /* wrap only when screen is too small */
+            padding: 0 10px;
+        }
+        }
+
       `}</style>
             </div>
         </>

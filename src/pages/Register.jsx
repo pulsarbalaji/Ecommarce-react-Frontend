@@ -47,8 +47,13 @@ const Register = () => {
       sessionStorage.setItem("password", password);
       navigate("/verification", { state: { type: "email" } });
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.error || error.response?.data?.message || "Email registration failed";
+      let data = error.response?.data;
+
+      let errorMessage =
+        (Array.isArray(data) ? data[0] : null) ||             
+        data?.error ||
+        data?.message ||
+        "Email registration failed";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -89,7 +94,7 @@ const Register = () => {
         refresh: res.data.refresh,
         user: res.data.user,
       });
-      
+
       toast.success("Google registration successful!");
       navigate("/dashboard");
     } catch (error) {
@@ -146,25 +151,25 @@ const Register = () => {
             </div>
 
             <div className="floating-input password-input">
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            placeholder=" "
-                            value={password}
-                            required
-                            onChange={(e) => setPassword(e.target.value)}
-                          />
-                          <label>
-                            <FaLock /> Password
-                          </label>
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                          </button>
-                        </div>
-            
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder=" "
+                value={password}
+                required
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <label>
+                <FaLock /> Password
+              </label>
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
 
             <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
               {loading ? "Please wait..." : "Register"}

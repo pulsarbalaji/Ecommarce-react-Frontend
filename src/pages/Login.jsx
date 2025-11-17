@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaMobileAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
@@ -27,23 +27,36 @@ const Login = () => {
 
   // Email login
   const handleEmailLogin = async (e) => {
-    e.preventDefault();
-    if (!isValidEmail(email)) return toast.error("Please enter a valid email.");
-    if (!isValidPassword(password))
-      return toast.error("Password must be at least 6 characters.");
+  e.preventDefault();
+  try {
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email.");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
 
     setLoading(true);
-    try {
-      const res = await api.post("customer/login/", { email, password });
-      login(res.data);
-      toast.success("Logged in successfully!");
-      navigate("/");
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await api.post("customer/login/", { email, password });
+    login(res.data);
+    toast.success("Logged in successfully!");
+    navigate("/");
+  } catch (error) {
+    toast.error(error.response?.data?.error || "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  const msg = sessionStorage.getItem("redirect_toast");
+  if (msg) {
+    toast.success(msg, { duration: 3000 });
+    sessionStorage.removeItem("redirect_toast"); // remove after showing
+  }
+}, []);
 
   // Phone login
   const handlePhoneLogin = async (e) => {
@@ -111,11 +124,11 @@ const Login = () => {
 
         {/* Email Login */}
         {loginMethod === "email" && (
-          <motion.form onSubmit={handleEmailLogin} className="login-form">
+          <motion.form  className="login-form">
             <div className="floating-input">
               <input
                 type="email"
-                placeholder=" "
+                placeholder=""
                 value={email}
                 required
                 onChange={(e) => setEmail(e.target.value)}
@@ -128,7 +141,7 @@ const Login = () => {
             <div className="floating-input password-input">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder=" "
+                placeholder=""
                 value={password}
                 required
                 onChange={(e) => setPassword(e.target.value)}
@@ -148,7 +161,7 @@ const Login = () => {
               <Link to="/passwordreset">Forgot Password?</Link>
             </div>
 
-            <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
+            <button onClick={handleEmailLogin} className="btn btn-primary login-btn" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
           </motion.form>

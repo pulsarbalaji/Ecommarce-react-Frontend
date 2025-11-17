@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import api from "../utils/base_url";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addCart } from "../redux/action";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { motion } from "framer-motion";
+import { addCart, delCart } from "../redux/action";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
@@ -16,10 +17,31 @@ const OfferModal = () => {
     const [filtered, setFiltered] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [favorites, setFavorites] = useState([]);
+
+    const [stockError, setStockError] = useState({});
 
     const { user } = useAuth();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const state = useSelector((state) => state.handleCart);
+
+    const badgeStyle = {
+        position: "absolute",
+        top: "8px",
+        left: "38%",
+        transform: "translateX(-50%)",
+        padding: "6px 14px",
+        background: "#dc3545",
+        color: "white",
+        borderRadius: "20px",
+        fontSize: "0.8rem",
+        fontWeight: 600,
+        zIndex: 99,
+        whiteSpace: "nowrap",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+    };
 
     // API call for offer products by page/category
     const fetchOfferProducts = async (pageNo = 1, category = null) => {
@@ -42,7 +64,41 @@ const OfferModal = () => {
             setLoading(false);
         }
     };
+    const fetchFavorites = React.useCallback(async () => {
+        if (!user) return;
+        try {
+            const res = await api.get(`favorites/ids/?auth_id=${user.id}`);
+            setFavorites(res.data.favorites || []);
+        } catch { }
+    }, [user]);
 
+    useEffect(() => {
+        if (show) fetchFavorites();
+    }, [show, fetchFavorites]);
+
+
+
+    const toggleFavorite = async (productId) => {
+        if (!user) {
+            toast.error("Please login first!");
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const res = await api.post("favorites/toggle/", {
+                product_id: productId,
+                auth_id: user.id
+            });
+            const isFav = res.data.favorite;
+
+            setFavorites((prev) =>
+                isFav ? [...prev, productId] : prev.filter((id) => id !== productId)
+            );
+        } catch {
+            toast.error("Failed. Try again.");
+        }
+    };
     useEffect(() => {
         if (show) fetchOfferProducts(page, selectedCat);
     }, [show, page, selectedCat]);
@@ -57,14 +113,33 @@ const OfferModal = () => {
         setPage(pageNum);
     };
 
-    const addProduct = (product) => {
-        if (user) {
-            dispatch(addCart(product));
-            toast.success("Added to cart");
-        } else {
-            toast.error("Please login first!");
-            navigate("/login");
+    const getCartQty = (productId) => {
+        const item = state.find((p) => p.id === productId);
+        return item ? item.qty : 0;
+    };
+
+    const addItem = (product) => {
+        const availableStock = product.stock_quantity;
+
+        if (availableStock && getCartQty(product.id) >= availableStock) {
+
+            // Show error badge
+            setStockError(prev => ({ ...prev, [product.id]: true }));
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                setStockError(prev => ({ ...prev, [product.id]: false }));
+            }, 3000);
+
+            return;
         }
+
+        dispatch(addCart(product));
+    };
+
+
+    const removeItem = (product) => {
+        dispatch(delCart(product));
     };
 
     const isMobile = window.innerWidth <= 767;
@@ -170,7 +245,8 @@ const OfferModal = () => {
                         }}
                     ></div>
                     <div
-                        className="offer-modal-content"
+                        className="offer-modal-content offer-modal-scope"
+
                         style={{
                             position: "fixed",
                             right: 0,
@@ -236,7 +312,8 @@ const OfferModal = () => {
                                 display: "grid",
                                 gap: "18px",
                                 padding: "18px 14px",
-                                gridTemplateColumns: "repeat(2, 1fr)"
+                                gridTemplateColumns: "repeat(2, 1fr)",
+                                borderRadius: "12px"
                             }}
                         >
                             {loading
@@ -249,54 +326,136 @@ const OfferModal = () => {
                                     <div style={{ textAlign: "center", gridColumn: "span 2", color: "#198754", fontWeight: 600 }}>
                                         No offer products found.
                                     </div>
+
                                 ) : (
                                     filtered.map((product, idx) => {
-                                        const hasOffer = !!product.offer_percentage && !!product.offer_price;
-                                        const altCardClass = idx % 2 === 0 ? "card-even" : "card-odd";
+                                        const outOfStock = !product.is_available || product.stock_quantity === 0;
+                                        const lowStock = product.stock_quantity <= 10 && product.stock_quantity > 0;
                                         return (
                                             <div
                                                 key={product.id}
-                                                className={`product-card shadow-sm ${altCardClass}`}
-                                                style={{
-                                                    position: "relative",
-                                                    background: idx % 2 === 0 ? "#fffaf6" : "#fdf6f0",
-                                                    border: "1.5px solid #f1e6d4",
-                                                    borderRadius: "12px",
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    justifyContent: "space-between",
-                                                    height: 340,
-                                                    minHeight: 340,
-                                                    transition: "transform 0.3s, box-shadow 0.3s",
-                                                    overflow: "hidden",
+                                                className="product-card "
+
+                                                onClick={() => {
+                                                    setShow(false);        // close modal
+                                                    navigate(`/product/${product.id}`);
                                                 }}
+
                                             >
-                                                {hasOffer && (
-                                                    <span className="offer-badge"
+                                                {/* ❤️ Favorite Icon */}
+                                                <div
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();   // prevent navigation
+                                                        toggleFavorite(product.id);
+                                                    }}
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: 10,
+                                                        right: 10,
+                                                        zIndex: 20,
+                                                        width: 28,
+                                                        height: 28,
+                                                        borderRadius: "50%",
+                                                        background: "rgba(255,255,255,0.9)",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                                    }}
+                                                >
+                                                    {favorites.includes(product.id) ? "❤️" : "🤍"}
+                                                </div>
+
+                                                {/* 🔥 Offer Badge */}
+                                                {product.offer_percentage && (
+                                                    <span className="modal-offer-badge"
                                                         style={{
                                                             position: "absolute",
-                                                            top: 10,
-                                                            right: 0,
-                                                            background: "linear-gradient(135deg, #ff4b2b, #ff416c)",
+                                                            top: 140,
+                                                            left: 0,
+                                                            background: "linear-gradient(135deg, #70a84d, #198754)",
                                                             color: "#fff",
-                                                            padding: "4px 10px",
-                                                            fontSize: "0.75rem",
-                                                            fontWeight: 600,
-                                                            borderRadius: "6px",
-                                                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
-                                                            zIndex: 5,
-                                                            letterSpacing: "0.3px"
-                                                        }}>
+                                                            padding: "2px 5px",
+                                                            fontSize: ".75rem",
+                                                            fontweight: "600",
+                                                            borderRadius: "0 6px 6px 0",
+                                                            zIndex: 10
+                                                        }}
+                                                    >
                                                         {Math.round(product.offer_percentage)}% OFF
                                                     </span>
                                                 )}
-                                                <div className="img-wrapper" style={{
-                                                    background: "#fffaf4",
-                                                    height: 150,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center"
-                                                }}>
+                                                {outOfStock && (
+                                                    <span
+                                                        style={{
+                                                            position: "absolute",
+                                                            top: 45,
+                                                            left: 0,
+                                                            background: "#dc3545",
+                                                            color: "#fff",
+                                                            padding: "4px 12px",
+                                                            fontSize: "0.75rem",
+                                                            fontWeight: 600,
+                                                            borderRadius: "0 6px 6px 0",
+                                                            zIndex: 12
+                                                        }}
+                                                    >
+                                                        Out of Stock
+                                                    </span>
+                                                )}
+
+                                                {!outOfStock && lowStock && (
+                                                    <span
+                                                        style={{
+                                                            position: "absolute",
+                                                            top: 10,
+                                                            left: 0,
+                                                            background: "#ffc107",
+                                                            color: "#000",
+                                                            padding: "4px 12px",
+                                                            fontSize: "0.75rem",
+                                                            fontWeight: 600,
+                                                            borderRadius: "0 6px 6px 0",
+                                                            zIndex: 12
+                                                        }}
+                                                    >
+                                                        Hurry! Only {product.stock_quantity} left
+                                                    </span>
+                                                )}
+                                                {stockError[product.id] && (
+                                                    <motion.div
+                                                        initial={{ x: 100, opacity: 0 }}
+                                                        animate={{
+                                                            x: [100, 0, -6, 6, -6, 6, 0],  // slide in + shake
+                                                            opacity: 1,
+                                                        }}
+                                                        transition={{
+                                                            duration: 0.6,
+                                                            ease: "easeOut",
+                                                        }}
+                                                        exit={{
+                                                            x: -100,
+                                                            opacity: 0,
+                                                            transition: { duration: 0.3 }
+                                                        }}
+                                                        style={badgeStyle}
+                                                    >
+                                                        Stock limit reached!
+                                                    </motion.div>
+
+
+                                                )}
+                                                <div
+                                                    className="img-wrapper"
+                                                    style={{
+                                                        height: 150,
+                                                        background: "#fffaf4",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
                                                     <img
                                                         src={process.env.REACT_APP_API_URL + product.product_image}
                                                         alt={product.product_name}
@@ -304,89 +463,75 @@ const OfferModal = () => {
                                                             width: "80%",
                                                             height: "100%",
                                                             objectFit: "contain",
-                                                            transition: "transform 0.3s"
+                                                            transition: "transform .32s",
+                                                            backgroundColor: "#fff9f3",
                                                         }}
+                                                        className="offer-img"
                                                     />
                                                 </div>
-                                                <div className="product-content" style={{ textAlign: "center", padding: "10px 12px", flexGrow: 1 }}>
-                                                    <h5 className="product-title" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#198754", marginBottom: 4 }}>
+
+                                                <div className="product-content" style={{ textAlign: "center", padding: 12 }}>
+                                                    <h5 className="product-title" style={{ fontWeight: 700 }}>
                                                         {product.product_name.length > 15
-                                                            ? product.product_name.substring(0, 15) + "..."
+                                                            ? product.product_name.slice(0, 15) + "..."
                                                             : product.product_name}
                                                     </h5>
-                                                    <p className="product-desc" style={{ color: "#000000ff", fontSize: "0.85rem", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                                                        {product.product_description.length > 70
-                                                            ? product.product_description.substring(0, 70) + "..."
-                                                            : product.product_description}
+                                                    <p className="product-desc">
+                                                        {product.product_description.slice(0, 60)}...
                                                     </p>
-                                                    <div className="product-price-wrap" style={{ display: "flex", alignItems: "baseline", gap: "10px", justifyContent: "center", flexWrap: "nowrap", whiteSpace: "nowrap", marginTop: 8 }}>
-                                                        {hasOffer ? (
+
+                                                    <div className="product-price-wrap" style={{ marginTop: 8 }}>
+                                                        {product.offer_price ? (
                                                             <>
-                                                                <span className="product-price-offer" style={{ color: "#28a745", fontSize: "1.17rem", fontWeight: 700 }}>
+                                                                <span className="product-price-offer">
                                                                     ₹ {parseFloat(product.offer_price).toLocaleString()}
                                                                 </span>
-                                                                <span className="product-price-original" style={{ fontSize: "0.93rem", color: "#dc3545", fontWeight: 400, marginLeft: 4 }}>
+                                                                <span className="product-price-original">
                                                                     <s>₹ {parseFloat(product.price).toLocaleString()}</s>
                                                                 </span>
                                                             </>
                                                         ) : (
-                                                            <span className="product-price" style={{ fontSize: "1rem", color: "#7a563a", fontWeight: "bold" }}>
+                                                            <span className="product-price">
                                                                 ₹ {parseFloat(product.price).toLocaleString()}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div
-                                                    className="d-flex justify-content-center gap-2 pb-3"
-                                                    style={{
-                                                        marginTop: "auto",
-                                                        flexWrap: "nowrap",   // prevent wrapping to two rows
-                                                        overflowX: "hidden",    // allow horizontal scroll if needed on small screens
-                                                    }}
-                                                >
-                                                    <Link
-                                                        to={`/product/${product.id}`}
-                                                        className="btn-buy"
-                                                        style={{
-                                                            borderRadius: 20,
-                                                            padding: "4px 10px",
-                                                            backgroundColor: "rgb(112,168,77)",
-                                                            color: "#fff",
-                                                            fontSize: "0.78rem",
-                                                            fontWeight: 500,
-                                                            textDecoration: "none",
-                                                            flex: "0 0 auto",    // fixed size so buttons don't stretch or shrink
-                                                            minWidth: 80,
-                                                            textAlign: "center",
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                        onClick={() => setShow(false)}
-                                                    >
-                                                        Buy Now
-                                                    </Link>
-                                                    <button
-                                                        className="btn-cart"
-                                                        style={{
-                                                            borderRadius: 20,
-                                                            padding: "4px 10px",
-                                                            backgroundColor: "#f1e6d4",
-                                                            color: "#198754",
-                                                            fontSize: "0.78rem",
-                                                            fontWeight: 500,
-                                                            border: "none",
-                                                            flex: "0 0 auto",    // fixed size to keep same as above
-                                                            minWidth: 80,
-                                                            textAlign: "center",
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                        onClick={() => addProduct(product)}
-                                                    >
-                                                        Add to Cart
-                                                    </button>
+
+                                                <div className="d-flex justify-content-center pb-3">
+                                                    <div className="product-btns" onClick={(e) => e.stopPropagation()}>
+                                                        {product.stock_quantity === 0 ? (
+                                                            <span className="out-stock-label">Out of Stock</span>
+                                                        ) : getCartQty(product.id) === 0 ? (
+                                                            <button
+                                                                className="btn-buy"
+                                                                onClick={() => addItem(product)}
+                                                            >
+                                                                Add to Cart
+                                                            </button>
+                                                        ) : (
+                                                            <div className="qty-box">
+                                                                <button
+                                                                    className="qty-btn"
+                                                                    onClick={() => removeItem(product)}
+                                                                >
+                                                                    <i className="fas fa-minus"></i>
+                                                                </button>
+
+                                                                <span className="qty-value">{getCartQty(product.id)}</span>
+
+                                                                <button
+                                                                    className="qty-btn"
+                                                                    onClick={() => addItem(product)}
+                                                                >
+                                                                    <i className="fas fa-plus"></i>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-
-
                                             </div>
+
                                         );
                                     })
                                 )}
@@ -417,9 +562,6 @@ const OfferModal = () => {
                             >
                                 ‹ Prev
                             </button>
-                            {/* <span style={{ color: "#7a563a", fontWeight: 600 }}>
-                Page {page} of {totalPages}
-              </span> */}
                             <button
                                 style={{
                                     borderRadius: 20,
@@ -467,23 +609,107 @@ const OfferModal = () => {
                 font-size: 0.8rem !important;
               }
             }
-              /* In your CSS file or inside <style> tag */
-@media (max-width: 576px) {
-  .btn-buy,
-  .btn-cart {
-     padding: 4px 10px !important;
-    font-size: 0.72rem !important;
-    min-width: 70px !important;
-    border-radius: 16px !important;
-  }
+
+             /* Only inside Offer Modal */
+.offer-modal-scope .product-card {
+  position: relative;
+  background: #fff9f3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #e6d2b5;
 }
 
-               .btn-buy, .btn-cart {
-          border: none; border-radius: 25px; padding: 5px 12px;
-          font-size: 0.8rem; font-weight: 500; transition: all 0.3s ease;
-        }
-        .btn-buy { background-color: #7a563a; color: #fff; }
-        .btn-buy:hover { background-color: #68492f; }
+/* Offer badge */
+.offer-modal-scope .offer-badge {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background: linear-gradient(135deg, #70a84d, #198754);
+  color: #fff;
+  padding: 2px 5px;
+  font-size: .75rem;
+  font-weight: 600;
+  border-radius: 0 6px 6px 0;
+  z-index: 10;
+}
+
+/* Stock badge */
+.offer-modal-scope .stock-badge {
+  position: absolute;
+  left: 0;
+  top: 45px;
+  padding: 4px 12px;
+  border-radius: 0 6px 6px 0;
+  font-weight: 600;
+  font-size: 0.75rem;
+  z-index: 12;
+}
+
+/* Image wrapper */
+.offer-modal-scope .img-wrapper {
+  height: 150px;
+  background: #fffaf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Product description */
+.offer-modal-scope .product-desc {
+  color: #846e6eff;
+  font-size: 0.85rem;
+  line-height: 1.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+/* Product content */
+.offer-modal-scope .product-content {
+  padding: 12px;
+  text-align: center;
+}
+
+/* Price styling */
+.offer-modal-scope .product-price-offer {
+  color: #198754;
+  font-weight: 700;
+}
+.offer-modal-scope .product-price-original {
+  color: #b33a3a;
+  margin-left: 4px;
+}
+.offer-modal-scope .product-price {
+  color: #198754;
+  font-weight: 600;
+}
+
+/* Buttons inside modal */
+.offer-modal-scope .btn-buy {
+  background-color: rgb(112,168,77);
+  color: #fff;
+  border-radius: 25px;
+  padding: 5px 12px;
+  border: none;
+}
+
+.offer-modal-scope .btn-buy:hover {
+  background-color: #95b25a;
+}
+
+.offer-modal-scope .btn-cart {
+  background: #f1e6d4;
+  color: #198754;
+  border-radius: 25px;
+  padding: 5px 12px;
+  border: none;
+}
+
+        
           `}</style>
                 </>
             )}

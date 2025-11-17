@@ -30,6 +30,20 @@ const OrderConfirmation = () => {
       </div>
     );
   }
+  const formatStatus = (value) => {
+    if (!value) return "";
+    return value
+      .replace(/_/g, " ")            // replace underscore with space
+      .replace(/\b\w/g, char => char.toUpperCase()); // capitalize each word
+  };
+  const statusColors = {
+    pending: "bg-warning text-dark",
+    order_confirmed: "bg-info text-white",
+    shipped: "bg-primary text-white",
+    delivered: "bg-success",
+    cancelled: "bg-danger",
+    returned: "bg-secondary text-white"
+  };
 
   if (!order) {
     return (
@@ -64,10 +78,13 @@ const OrderConfirmation = () => {
 
                 <div className="row mb-4 text-theme-dark">
                   <div className="col-12 col-md-6 mb-3 mb-md-0">
-                    <p><strong>Status:</strong> {order.status}</p>
+                    <p><strong>Status: </strong><span className={`badge ${statusColors[order.status] || "bg-dark text-white"}`}>
+                      {formatStatus(order.status)}
+                    </span>
+                    </p>
                     <p><strong>Payment Method:</strong> {order.payment_method === "cod" ? "Cash on Delivery" : "Online Payment"}</p>
                     <p><strong>Payment Status:</strong> {order.payment_status}</p>
-                    <p><strong>preferred Courier:</strong> {order.preferred_courier_service}</p>
+                    <p><strong>Preferred Courier:</strong> {order.preferred_courier_service}</p>
                   </div>
                   <div className="col-12 col-md-6">
                     <p><strong>Shipping Address:</strong> {order.shipping_address}</p>
@@ -102,7 +119,7 @@ const OrderConfirmation = () => {
 
                 <div className="text-end mt-4 text-theme-dark">
                   <p><strong>Subtotal:</strong> ₹{order.subtotal.toLocaleString()}</p>
-                  <p><strong>Tax:</strong> ₹{order.tax.toLocaleString()}</p>
+                  <p><strong>Tax{order.tax_percent.toLocaleString()}% :</strong> ₹{order.tax.toLocaleString()}</p>
                   <p><strong>Shipping:</strong> ₹{order.shipping_cost.toLocaleString()}</p>
                   <h5><strong>Total Amount:</strong> ₹{order.total_amount.toLocaleString()}</h5>
                 </div>

@@ -7,6 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import WhatsAppWidget from "../pages/WhatsAppWidget";
 import InstagramWidget from "../pages/Instagramwidget";
 import '../styles/index.css';
+import toast from "react-hot-toast";
 
 const Navbar = () => {
   const state = useSelector((state) => state.handleCart);
@@ -21,6 +22,12 @@ const Navbar = () => {
 
   const [touchStartX, setTouchStartX] = useState(null);
   const [touchCurrentX, setTouchCurrentX] = useState(null);
+
+  const [showModal, setShowModal] = useState(false);
+  const [feedbackProduct, setFeedbackProduct] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
 
 
 
@@ -44,6 +51,12 @@ const Navbar = () => {
     navigate("/");
     handleNavLinkClick();
   };
+
+  useEffect(() => {
+  if (notifPanelOpen) {
+    setUnreadCount(0);  
+  }
+}, [notifPanelOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -76,6 +89,53 @@ const Navbar = () => {
     const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, [user]);
+
+  const openFeedbackModal = async (item) => {
+    const productId = item?.product || item?.product_id || item?.id;
+
+    if (!productId) {
+      toast.error("Invalid product");
+      return;
+    }
+
+    const productName = item?.product_name || item?.product?.product_name || "Product";
+
+    setFeedbackProduct({ id: productId, name: productName });
+    setRating(0);
+    setComment("");
+    setShowModal(true);
+
+    // 🟢 Try fetching existing feedback for this product
+    try {
+      const res = await api.get(`feedback/${productId}/`); // example endpoint: GET /feedback/5/
+      if (res.data?.data) {
+        const fb = res.data.data;
+        setRating(Number(fb.rating || 0));
+        setComment(fb.comment || "");
+      }
+    } catch (err) {
+      // No existing feedback → ignore
+      if (err.response?.status !== 404) {
+        console.warn("Feedback fetch error:", err);
+      }
+    }
+  };
+  const submitFeedback = async () => {
+    if (!feedbackProduct?.id) return toast.error("Invalid product");
+    if (!rating) return toast.error("Please select a star rating");
+    if (comment.trim().length > 1000)
+      return toast.error("Comment can’t exceed 1000 characters");
+
+    try {
+      const payload = { rating, comment };
+      await api.post(`feedback/${feedbackProduct.id}/`, payload);
+      toast.success("Feedback submitted successfully!");
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit feedback");
+    }
+  };
 
 
   const getProfileImage = (user) => {
@@ -146,11 +206,17 @@ const Navbar = () => {
             id="navbarSupportedContent"
           >
             <ul className="navbar-nav m-auto my-2 text-center gap-3">
-              {["Home", "Product", "About", "Contact"].map((name) => (
+              {["Home", "Products", "About", "Contact"].map((name) => (
                 <li className="nav-item" key={name}>
                   <NavLink
                     className="nav-link fw-semibold"
-                    to={`/${name === "Home" ? "" : name.toLowerCase()}`}
+                    to={
+                      name === "Home"
+                        ? "/"
+                        : name === "Products"
+                          ? "/product"  // 👈 FIXED ROUTE FOR PRODUCTS PAGE
+                          : `/${name.toLowerCase()}`
+                    }
                     style={({ isActive }) => ({
                       color: isActive ? "rgb(112, 168, 77)" : "#000000ff",
                       borderBottom: isActive
@@ -168,22 +234,7 @@ const Navbar = () => {
 
             {/* Right Section */}
             <div className="d-flex align-items-center text-center flex-wrap gap-2">
-              {/* 🔔 Notifications */}
-              {user && (
-                <button
-                  className="nav-action-btn me-2 position-relative"
-                  onClick={() => setNotifPanelOpen(true)}
-                  title="Notifications"
-                >
-                  <i className="fa fa-bell"></i>
-                  {unreadCount > 0 && (
-                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                      style={{ fontSize: "0.65rem" }}>
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              )}
+       
 
               {/* 🔍 Search Button */}
               <button
@@ -204,6 +255,21 @@ const Navbar = () => {
                 >
                   <i className="fa fa-heart text-danger"></i>
                   <span>Wishlist</span>
+                </button>
+              )}
+              {user && (
+                <button
+                  className="nav-action-btn me-2 position-relative"
+                  onClick={() => setNotifPanelOpen(true)}
+                  title="Notifications"
+                >
+                  <i className="fa fa-bell"></i>
+                  {unreadCount > 0 && (
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style={{ fontSize: "0.65rem" }}>
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
               )}
 
@@ -295,15 +361,6 @@ const Navbar = () => {
                           }}
                         >
                           Order History
-                        </button>
-                        <button
-                          className="dropdown-item-themed text-start fw-semibold"
-                          onClick={() => {
-                            navigate("/favoriteProducts");
-                            setOpenMenu(false);
-                          }}
-                        >
-                          Favorite Products
                         </button>
                         <button
                           className="dropdown-item-themed dropdown-item-danger text-start fw-semibold"
@@ -422,7 +479,20 @@ const Navbar = () => {
           >
             <i className="fa fa-search" style={{ fontSize: "1.3rem", color: "#198754" }}></i>
           </button>
-          {user && (
+
+        </div>
+
+        <div className="d-flex align-items-center gap-3">
+          <WhatsAppWidget inNavbar={true} />
+          <InstagramWidget inNavbar={true} />
+          <button
+            className="btn p-0"
+            onClick={() => navigate("/favoriteProducts")}
+            style={{ background: "transparent", border: "none" }}
+          >
+            <i className="fa fa-heart" style={{ fontSize: "1.3rem", color: "#e63946" }}></i>
+          </button>
+                 {user && (
             <button
               className="btn p-0 position-relative"
               onClick={() => setNotifPanelOpen(true)}
@@ -437,19 +507,6 @@ const Navbar = () => {
               )}
             </button>
           )}
-
-        </div>
-
-        <div className="d-flex align-items-center gap-3">
-          <WhatsAppWidget inNavbar={true} />
-          <InstagramWidget inNavbar={true} />
-          <button
-            className="btn p-0"
-            onClick={() => navigate("/favoriteProducts")}
-            style={{ background: "transparent", border: "none" }}
-          >
-            <i className="fa fa-heart" style={{ fontSize: "1.3rem", color: "#e63946" }}></i>
-          </button>
           <button
             className="btn p-0 position-relative"
             onClick={() => navigate("/cart")}
@@ -516,10 +573,16 @@ const Navbar = () => {
             )}
 
             <ul className="list-unstyled mt-4">
-              {["Home", "Product", "About", "Contact"].map((name) => (
+              {["Home", "Products", "About", "Contact"].map((name) => (
                 <li key={name}>
                   <NavLink
-                    to={`/${name === "Home" ? "" : name.toLowerCase()}`}
+                    to={
+                      name === "Home"
+                        ? "/"
+                        : name === "Products"
+                          ? "/product"  
+                          : `/${name.toLowerCase()}`
+                    }
                     className="drawer-link-item"
                     onClick={() => setIsDrawerOpen(false)}
                   >
@@ -668,15 +731,22 @@ const Navbar = () => {
                     className="notif-item"
                     onClick={async () => {
                       try {
-                         await api.put(`readnotifications/${n.id}/`);
+                        await api.put(`readnotifications/${n.id}/`);
 
                         // Remove item from list
                         setNotifications(notifications.filter((x) => x.id !== n.id));
                         setUnreadCount((c) => c - 1);
 
                         // ★★★ Navigate to order tracking if order number exists ★★★
-                        if (n.order_number) {
+                        if (n.type === "order_status") {
                           navigate(`/order-tracking/${n.order_number}`);
+                        }
+
+                        else if (n.type === "product_rating" && n.product_id) {
+                          openFeedbackModal({
+                            id: n.product_id,
+                            product_name: n.product_name
+                          });
                         }
 
                         // Close panel
@@ -912,7 +982,179 @@ const Navbar = () => {
 }
 
 
+
+  /* === Feedback Modal === */
+  .feedback-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .feedback-content {
+    background: white;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 15px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+  }
+
+  .star.active {
+    color: gold;
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+  }
+
+  /* === Product Cell Layout === */
+  .product-cell {
+    vertical-align: middle;
+  }
+
+  .product-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .product-name {
+    font-weight: 500;
+    color: var(--text-dark);
+    word-break: break-word;
+  }
+
+  /* === Feedback Button === */
+  .btn-feedback {
+    background-color: transparent;
+    border: 1.5px solid var(--brown-dark);
+    color: var(--brown-dark);
+    font-weight: 600;
+    border-radius: 25px;
+    padding: 5px 14px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-feedback:hover {
+    background-color: var(--brown-dark);
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(112, 168, 77, 0.25);
+  }
+
+  /* === Responsive Tweaks === */
+  /* === Responsive Fix: Center Review Button on Mobile === */
+  @media (max-width: 768px) {
+    .product-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* centers horizontally */
+      justify-content: center;
+      padding: 8px 0;
+      text-align: center;
+    }
+
+    .product-info {
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .product-name {
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .btn-feedback {
+      width: 80%; /* nice touch target, not edge-to-edge */
+      justify-content: center;
+      margin-top: 6px;
+      align-self: center;
+      text-align: center;
+    }
+  }
+
+/* Optional for very small screens */
+@media (max-width: 480px) {
+  .btn-feedback {
+    width: 90%;
+    font-size: 0.85rem;
+  }
+}
+
       `}</style>
+
+      {showModal && (
+        <div className="feedback-modal">
+          <div className="feedback-content p-4 rounded shadow">
+            <h5 className="text-success fw-bold mb-3">
+              Feedback for {feedbackProduct?.name}
+            </h5>
+
+            {/* ⭐ Star Rating */}
+            <div className="stars mb-3">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  className={`star ${star <= (hover || rating) ? "active" : ""}`}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHover(star)}
+                  onMouseLeave={() => setHover(rating)}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+
+            {/* 💬 Comment */}
+            <textarea
+              className="form-control mb-3"
+              rows="3"
+              placeholder="Write your feedback (max 1000 characters)"
+              value={comment}
+              onChange={(e) => setComment(e.target.value.slice(0, 1000))}
+            />
+
+            <div className="d-flex justify-content-center gap-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-success" onClick={submitFeedback}>
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -12,7 +12,7 @@ const CategorySidebar = ({ categories, selectedCat, handleCategory }) => {
     if (activeItem) {
       activeItem.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "nearest",
       });
     }
   }, [selectedCat]);

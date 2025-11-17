@@ -13,6 +13,9 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [gstLoaded, setGstLoaded] = useState(false);
+
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -46,38 +49,54 @@ const Checkout = () => {
   useEffect(() => {
     const getGST = async () => {
       try {
-        const res = await api.get("settings/gst/"); // API endpoint
-        setGST(Number(res.data.gst_percentage)); // Adjust key if different
-      } catch (error) {
-        console.error("GST fetch error:", error);
-        setGST(0); // fallback
+        const res = await api.get("settings/gst/");
+        setGST(Number(res.data.gst_percentage));
+      } catch {
+        setGST(0);
+      } finally {
+        setGstLoaded(true);  // Important
       }
     };
 
     getGST();
   }, []);
+
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
+
+    // BLOCK alphabets & special characters for phone fields
+    if (
+      (name === "contact_number" || name === "secondary_number") &&
+      value !== "" &&
+      !/^\d+$/.test(value)
+    ) {
+      return;
+    }
+
     if (name === "sameAsBilling") {
       setFormData((prev) => ({
         ...prev,
         sameAsBilling: checked,
         shippingAddress: checked ? prev.billingAddress : "",
       }));
-    } else if (name === "billingAddress") {
+    }
+
+    else if (name === "billingAddress") {
       setFormData((prev) => ({
         ...prev,
         billingAddress: value,
         ...(prev.sameAsBilling ? { shippingAddress: value } : {}),
       }));
-    } else {
+    }
+
+    else {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
       }));
     }
 
-    // Clear error as user types
+    // Clear error while typing
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -95,7 +114,8 @@ const Checkout = () => {
     const gstPercent = Number(GST) || 0; // % from backend
     const gstAmount = (subtotal * gstPercent) / 100; // GST value
 
-    const totalAmount = subtotal + gstAmount + shippingCost;
+    const totalAmount = Math.round(subtotal + gstAmount + shippingCost);
+
     const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
 
     return { subtotal, gstPercent, gstAmount, shippingCost, totalAmount, totalItems };
@@ -143,7 +163,7 @@ const Checkout = () => {
       payment_method: formData.paymentMethod,
       items: itemsPayload,
       subtotal,
-      tax: GST,
+      tax_percent: gstPercent,
       shipping_cost: shippingCost,
       total_amount: totalAmount,
     };
@@ -326,7 +346,7 @@ const Checkout = () => {
                       )}
                     </div>
                     <div className="col-sm-6">
-                      <label className="form-label">Secondary Number</label>
+                      <label className="form-label">Secondary Contact Number</label>
                       <input
                         type="phone"
                         name="secondary_number"
@@ -468,9 +488,14 @@ const Checkout = () => {
                   </div>
 
                   <hr className="my-4" />
-                  <button type="submit" className="w-100 btn-themed btn-lg">
-                    Place Order (₹{totalAmount})
+                  <button
+                    type="submit"
+                    className="w-100 btn-themed btn-lg"
+                    disabled={!gstLoaded}
+                  >
+                    {gstLoaded ? `Place Order (₹${totalAmount})` : "Loading GST..."}
                   </button>
+
                 </form>
               </div>
             </div>
