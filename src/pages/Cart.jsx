@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Footer, Navbar } from "../components";
 import { useSelector, useDispatch } from "react-redux";
-import { addCart, delCart } from "../redux/action";
-import { Link } from "react-router-dom";
+import { addCart, delCart, setCart } from "../redux/action";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/base_url";
 import { motion } from "framer-motion";
 import '../styles/index.css';
+import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 const Cart = () => {
   const [shipping, setShipping] = useState(0);
@@ -15,6 +17,8 @@ const Cart = () => {
 
   const state = useSelector((state) => state.handleCart);
   const dispatch = useDispatch();
+
+  const { user } = useAuth();
 
   const addItem = (product) => {
     const availableStock = stocks[product.id];
@@ -33,6 +37,67 @@ const Cart = () => {
     }
 
     dispatch(addCart(product));
+  };
+
+  const navigate = useNavigate();
+  const initiateCheckout = async () => {
+    const token = sessionStorage.getItem("access");
+    if (!token) {
+      sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
+      return navigate("/login");
+    }
+
+    const userId = user.id;
+    const cartPayload = state.map((item) => ({
+      product_id: item.id,
+      qty: item.qty,
+    }));
+
+    try {
+      const res = await api.post("checkout-initiate/", {
+        user_id: userId,
+        cart: cartPayload,
+      });
+
+      if (!res.data.status) {
+        toast.error(res.data.message || "Checkout failed");
+        return;
+      }
+
+      // Show warnings if backend adjusted items
+      if (res.data.updated_items?.length) {
+        toast.error("Some quantities were reduced due to low stock");
+      }
+      if (res.data.removed_items?.length) {
+        toast.error("Some items removed because they are out of stock");
+      }
+
+      // Build full cart objects expected by frontend/checkout
+      const final = res.data.reserved_items.map((i) => ({
+        id: i.product_id,
+        qty: i.qty,
+        product_name: i.product_name,
+        price: Number(i.price) || 0,
+        offer_price: i.offer_price ? Number(i.offer_price) : null,
+        product_image: i.product_image,
+        // include any other fields you need in checkout UI
+      }));
+
+      // update Redux & localStorage — now checkout will have full details, not NaN
+      dispatch(setCart(final));
+
+      // go to checkout page
+      navigate("/checkout");
+    } catch (err) {
+      console.error("initiateCheckout error:", err);
+      toast.error("Unable to start checkout");
+    }
+  };
+
+  const formatName = (text) => {
+    if (!text) return "";
+    const cleaned = text.replace(/_/g, " ").toLowerCase();
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   };
 
 
@@ -153,19 +218,23 @@ const Cart = () => {
                           <div className="col-4 col-sm-3 text-center">
                             <img
                               src={`${process.env.REACT_APP_API_URL}${item.product_image}`}
-                              alt={item.product_name}
+                              alt={formatName(item.product_name)}
                               className="rounded-theme img-fluid"
                               style={{ maxHeight: "90px", objectFit: "contain" }}
                             />
                           </div>
 
                           <div className="col-8 col-sm-5">
-                            <p
-                              className="text-theme-dark fw-semibold mb-1"
-                              style={{ fontSize: "1rem" }}
-                            >
-                              {item.product_name}
+                            <p className="text-theme-dark fw-semibold mb-1" style={{ fontSize: "1rem" }}>
+                              {formatName(item.product_name)}
                             </p>
+
+                            {item.variant_label && (
+                              <p className="text-secondary small" style={{ marginTop: "-2px" }}>
+                                {item.variant_label}
+                              </p>
+                            )}
+
                             <p
                               className="text-theme-muted mb-1"
                               style={{ fontSize: "0.9rem" }}
@@ -184,13 +253,26 @@ const Cart = () => {
                               className="input-group input-group-sm quantity-controls"
                               style={{ maxWidth: "120px" }}
                             >
-                              <button
-                                className="btn btn-themed-outline"
-                                onClick={() => removeItem(item)}
-                                aria-label={`Remove one ${item.product_name}`}
-                              >
-                                <i className="fas fa-minus"></i>
-                              </button>
+                              {item.qty > 1 ? (
+                                // Show minus (-) button when qty > 1
+                                <button
+                                  className="btn btn-themed-outline"
+                                  onClick={() => removeItem(item)}
+                                  aria-label={`Remove one ${item.product_name}`}
+                                >
+                                  <i className="fas fa-minus"></i>
+                                </button>
+                              ) : (
+                                // Show basket/delete icon when qty = 1
+                                <button
+                                  className="btn btn-themed-outline"
+                                  onClick={() => removeItem(item)}
+                                  aria-label={`Remove ${item.product_name} from cart`}
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              )}
+
                               <span className="input-group-text qty-display">
                                 {item.qty}
                               </span>
@@ -282,24 +364,11 @@ const Cart = () => {
 
                   <button
                     className="btn-themed btn-lg w-100 text-center"
-                    onClick={() => {
-                      const token = sessionStorage.getItem("access");
-
-                      if (!token) {
-
-                        // store message for next page
-                        sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
-
-                        // immediately navigate
-                        window.location.href = "/login";
-                        return;
-                      }
-
-                      window.location.href = "/checkout";
-                    }}
+                    onClick={initiateCheckout}
                   >
                     Go to checkout
                   </button>
+
 
 
                 </div>

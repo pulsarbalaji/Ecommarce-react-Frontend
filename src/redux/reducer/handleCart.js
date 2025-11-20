@@ -9,6 +9,13 @@ const handleCart = (state = getInitialCart(), action) => {
   let updatedCart;
 
   switch (action.type) {
+
+    case "SET_CART":
+      updatedCart = action.payload;
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+      return updatedCart;
+
+
     case "ADDITEM":
       const exist = state.find((x) => x.id === product.id);
       if (exist) {

@@ -212,14 +212,12 @@ const Products = () => {
   };
 
   const addItem = (product) => {
-    const availableStock = product.stock_quantity;
+    const available = product.available_stock ?? product.stock_quantity;
 
-    if (availableStock && getCartQty(product.id) >= availableStock) {
-
-      // Show error badge
+    // If cart qty already reached available stock → block
+    if (getCartQty(product.id) >= available) {
       setStockError(prev => ({ ...prev, [product.id]: true }));
 
-      // Auto-hide after 3 seconds
       setTimeout(() => {
         setStockError(prev => ({ ...prev, [product.id]: false }));
       }, 3000);
@@ -227,6 +225,7 @@ const Products = () => {
       return;
     }
 
+    // Add to cart
     dispatch(addCart(product));
   };
 
@@ -286,10 +285,10 @@ const Products = () => {
                       product.offer_price;
 
                     const altCardClass = idx % 2 === 0 ? "card-even" : "card-odd";
-                    const outOfStock =
-                      !product.is_available || product.stock_quantity === 0;
-                    const stockLow =
-                      product.stock_quantity <= 10 && product.stock_quantity > 0;
+                    const available = product.available_stock ?? product.stock_quantity;
+
+                    const outOfStock = available === 0;
+                    const stockLow = available <= 10 && available > 0;
 
                     return (
                       <div
@@ -311,7 +310,7 @@ const Products = () => {
                         )}
                         {!outOfStock && stockLow && (
                           <span className="stock-badge low-stock">
-                            Hurry! Only {product.stock_quantity} left
+                            Hurry! Only {available} left
                           </span>
                         )}
 

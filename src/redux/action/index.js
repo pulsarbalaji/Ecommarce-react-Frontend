@@ -13,3 +13,8 @@ export const delCart = (product) =>{
         payload:product
     }
 }
+
+export const setCart = (cartArray) => ({
+  type: "SET_CART",
+  payload: cartArray,
+});

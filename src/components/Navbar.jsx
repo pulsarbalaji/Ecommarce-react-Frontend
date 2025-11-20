@@ -8,6 +8,7 @@ import WhatsAppWidget from "../pages/WhatsAppWidget";
 import InstagramWidget from "../pages/Instagramwidget";
 import '../styles/index.css';
 import toast from "react-hot-toast";
+import NotificationPanel from "./notificationsPanel";
 
 const Navbar = () => {
   const state = useSelector((state) => state.handleCart);
@@ -19,9 +20,6 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
-
-  const [touchStartX, setTouchStartX] = useState(null);
-  const [touchCurrentX, setTouchCurrentX] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [feedbackProduct, setFeedbackProduct] = useState(null);
@@ -52,11 +50,6 @@ const Navbar = () => {
     handleNavLinkClick();
   };
 
-  useEffect(() => {
-  if (notifPanelOpen) {
-    setUnreadCount(0);  
-  }
-}, [notifPanelOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -234,7 +227,7 @@ const Navbar = () => {
 
             {/* Right Section */}
             <div className="d-flex align-items-center text-center flex-wrap gap-2">
-       
+
 
               {/* 🔍 Search Button */}
               <button
@@ -492,7 +485,7 @@ const Navbar = () => {
           >
             <i className="fa fa-heart" style={{ fontSize: "1.3rem", color: "#e63946" }}></i>
           </button>
-                 {user && (
+          {user && (
             <button
               className="btn p-0 position-relative"
               onClick={() => setNotifPanelOpen(true)}
@@ -580,7 +573,7 @@ const Navbar = () => {
                       name === "Home"
                         ? "/"
                         : name === "Products"
-                          ? "/product"  
+                          ? "/product"
                           : `/${name.toLowerCase()}`
                     }
                     className="drawer-link-item"
@@ -651,125 +644,7 @@ const Navbar = () => {
 
       {user && <ProfileUpdateForm />}
 
-      {/* 🔔 Notification Slide Panel */}
-      {notifPanelOpen && (
-        <>
-          <div
-            className="notif-backdrop"
-            onClick={() => setNotifPanelOpen(false)}
-          ></div>
 
-          <div
-            className="notif-panel"
-            onMouseDown={(e) => {
-              if (e.clientX > window.innerWidth - 40) setTouchStartX(e.clientX);
-            }}
-
-            onMouseMove={(e) => {
-              if (touchStartX !== null) setTouchCurrentX(e.clientX);
-            }}
-
-            onMouseUp={() => {
-              if (touchStartX !== null && touchCurrentX !== null) {
-                const diff = touchCurrentX - touchStartX;
-
-                if (Math.abs(diff) > 80) {
-                  setNotifPanelOpen(false); // close
-                }
-              }
-              setTouchStartX(null);
-              setTouchCurrentX(null);
-            }}
-
-            style={{
-              transform:
-                touchStartX && touchCurrentX
-                  ? `translateX(${Math.min(0, touchCurrentX - touchStartX)}px)`
-                  : "translateX(0)",
-              transition: touchStartX ? "none" : "transform 0.3s ease",
-            }}
-
-          >
-
-            <div className="notif-header">
-              <h6>Notifications</h6>
-
-              {notifications.length > 0 && (
-                <button
-                  className="clear-btn"
-                  onClick={async () => {
-                    try {
-                      // Mark ALL as read
-                      await Promise.all(
-                        notifications.map((item) =>
-                          api.put(`readnotifications/${item.id}/`)
-                        )
-                      );
-
-                      setNotifications([]);
-                      setUnreadCount(0);
-                      setNotifPanelOpen(false); // Close panel after clearing
-                    } catch (error) {
-                      console.error("Clear error", error);
-                    }
-                  }}
-                >
-                  Clear All
-                </button>
-
-
-              )}
-            </div>
-
-            <div className="notif-body">
-              {notifications.length === 0 ? (
-                <p className="text-center text-muted mt-3">No new notifications</p>
-              ) : (
-                notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="notif-item"
-                    onClick={async () => {
-                      try {
-                        await api.put(`readnotifications/${n.id}/`);
-
-                        // Remove item from list
-                        setNotifications(notifications.filter((x) => x.id !== n.id));
-                        setUnreadCount((c) => c - 1);
-
-                        // ★★★ Navigate to order tracking if order number exists ★★★
-                        if (n.type === "order_status") {
-                          navigate(`/order-tracking/${n.order_number}`);
-                        }
-
-                        else if (n.type === "product_rating" && n.product_id) {
-                          openFeedbackModal({
-                            id: n.product_id,
-                            product_name: n.product_name
-                          });
-                        }
-
-                        // Close panel
-                        setNotifPanelOpen(false);
-
-                      } catch (error) {
-                        console.error("Notification click error:", error);
-                      }
-                    }}
-
-                  >
-                    <strong>{n.title}</strong>
-                    <p>{n.message}</p>
-                    <span className="notif-time">
-                      {new Date(n.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
 
 
       <style>{`
@@ -1109,6 +984,19 @@ const Navbar = () => {
 }
 
       `}</style>
+
+      {user && (
+        <NotificationPanel
+          isOpen={notifPanelOpen}
+          onClose={() => setNotifPanelOpen(false)}
+          user={user}
+          notifications={notifications}
+          setNotifications={setNotifications}
+          unreadCount={unreadCount}
+          setUnreadCount={setUnreadCount}
+          openFeedbackModal={openFeedbackModal}
+        />
+      )}
 
       {showModal && (
         <div className="feedback-modal">

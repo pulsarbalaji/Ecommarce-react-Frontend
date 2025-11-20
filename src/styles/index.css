@@ -9,7 +9,7 @@
 body {
   font-family: 'Poppins', sans-serif;
   color: #2e2e2e;
-  background-color: #fffaf4;
+  background-color: #fffaf4 !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -41,7 +41,7 @@ import SearchResults from "./pages/SearchResults";
 const AppContent = () => {
   const location = useLocation();
 
-  const hideOnRoutes = ["/login", "/register", "/verification", "/checkout","/passwordreset","/reset-password"];
+  const hideOnRoutes = ["/login", "/register", "/verification", "/checkout", "/passwordreset", "/reset-password"];
   const shouldHide = hideOnRoutes.includes(location.pathname);
 
   return (
@@ -92,7 +92,7 @@ root.render(
     <GoogleOAuthProvider clientId="894528088345-4e1pbin29dladn3uafe44450espqu0lk.apps.googleusercontent.com">
       <AuthProvider>
         <ScrollToTop>
-  <ScrollToTop />
+          <ScrollToTop />
           <Provider store={store}>
             <WhatsAppWidget />
             <InstagramWidget />

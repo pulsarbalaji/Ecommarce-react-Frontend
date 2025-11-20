@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useContext, useEffect } from "react";
+import React, { useState, useMemo, useContext, useEffect, useCallback } from "react";
 import { Footer, Navbar } from "../components";
 import { useSelector, useDispatch } from "react-redux";
+import { setCart } from "../redux/action";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/base_url";
 import { clearCart } from "../redux/reducer/handleCart";
@@ -45,6 +46,39 @@ const Checkout = () => {
 
     getShippingCharge();
   }, []);
+
+  const validateCheckout = useCallback(async () => {
+  try {
+    const res = await api.post("checkout-validate/", { user_id: user.id });
+
+    if (!res.data.status) {
+
+      const qtyMap = {};
+      res.data.valid_items.forEach(i => qtyMap[i.id] = i.qty);
+
+      const newCart = cartItems
+        .map(item => qtyMap[item.id] !== undefined
+          ? { ...item, qty: qtyMap[item.id] }
+          : null)
+        .filter(Boolean);
+
+      dispatch(setCart(newCart));
+
+      toast.error("Cart updated due to stock/reservation changes");
+      navigate("/cart");
+      return;
+    }
+
+  } catch (err) {
+    toast.error("Unable to validate checkout");
+    navigate("/cart");
+  }
+}, [cartItems, dispatch, navigate, user.id]);
+
+  useEffect(() => {
+    validateCheckout();
+  }, [validateCheckout]);
+
 
   useEffect(() => {
     const getGST = async () => {
@@ -102,12 +136,10 @@ const Checkout = () => {
 
   const { subtotal, gstPercent, gstAmount, shippingCost, totalAmount, totalItems } = useMemo(() => {
     const subtotal = cartItems.reduce((acc, item) => {
-      const priceToUse =
-        item.offer_price && Number(item.offer_price) > 0
-          ? Number(item.offer_price)
-          : Number(item.price);
+      const price = (item.offer_price && Number(item.offer_price) > 0) ? Number(item.offer_price) : Number(item.price || 0);
 
-      return acc + priceToUse * item.qty;
+
+      return acc + price * item.qty;
     }, 0);
 
     const shippingCost = Number(shipping);

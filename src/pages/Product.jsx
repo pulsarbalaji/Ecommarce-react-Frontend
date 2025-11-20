@@ -1,13 +1,15 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addCart, delCart } from "../redux/action";
+import { addCart, delCart, setCart } from "../redux/action";
 import { motion } from "framer-motion";
 import { Footer, Navbar } from "../components";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/base_url";
 import toast from "react-hot-toast";
+import ReviewBox from "../components/ReviewBox";
+
 
 const Product = () => {
   const { id } = useParams();
@@ -17,12 +19,6 @@ const Product = () => {
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [stocks, setStocks] = useState({});
   const [variants, setVariants] = useState([]);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviews, setReviews] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-  const [feedbackProductId, setFeedbackProductId] = useState(null);
   const [showDescModal, setShowDescModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -31,7 +27,7 @@ const Product = () => {
 
 
 
-
+  const reviewRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
@@ -54,42 +50,111 @@ const Product = () => {
     whiteSpace: "nowrap",
     boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
   };
-const badgeStyleSimullar = {
-  position: "absolute",
-  top: "15px",
-  left: "1px",
-  padding: "4px 10px",
-  background: "#dc3545",
-  color: "#fff",
-  borderRadius: "0 6px 6px 0",  // Perfect pill shape
-  fontSize: "0.72rem",    // Clean small text
-  fontWeight: 600,
-  zIndex: 999,
-  whiteSpace: "nowrap",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-  pointerEvents: "none",  // prevents blocking clicks
-};
+  const badgeStyleSimullar = {
+    position: "absolute",
+    top: "15px",
+    left: "1px",
+    padding: "4px 10px",
+    background: "#dc3545",
+    color: "#fff",
+    borderRadius: "0 6px 6px 0",  // Perfect pill shape
+    fontSize: "0.72rem",    // Clean small text
+    fontWeight: 600,
+    zIndex: 999,
+    whiteSpace: "nowrap",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+    pointerEvents: "none",  // prevents blocking clicks
+  };
 
   const getCartQty = (productId) => {
     const item = state.find((p) => p.id === productId);
     return item ? item.qty : 0;
   };
+  const goToReviews = () => {
+    const position = reviewRef.current?.offsetTop - 80; // adjust for navbar height
+    window.scrollTo({ top: position, behavior: "smooth" });
+  };
 
-  const addItem = (product) => {
-    const availableStock = product.stock_quantity;
-
-    if (availableStock && getCartQty(product.id) >= availableStock) {
-      setStockError(prev => ({ ...prev, [product.id]: true }));
-
-      setTimeout(() => {
-        setStockError(prev => ({ ...prev, [product.id]: false }));
-      }, 3000);
-
-      return;
+  const initiateCheckout = async () => {
+    const token = sessionStorage.getItem("access");
+    if (!token) {
+      sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
+      return navigate("/login");
     }
 
-    dispatch(addCart(product));
+    const userId = user.id;
+    const cartPayload = state.map((item) => ({
+      product_id: item.id,
+      qty: item.qty,
+    }));
+
+    try {
+      const res = await api.post("checkout-initiate/", {
+        user_id: userId,
+        cart: cartPayload,
+      });
+
+      if (!res.data.status) {
+        toast.error(res.data.message || "Checkout failed");
+        return;
+      }
+
+      // Show warnings if backend adjusted items
+      if (res.data.updated_items?.length) {
+        toast.error("Some quantities were reduced due to low stock");
+      }
+      if (res.data.removed_items?.length) {
+        toast.error("Some items removed because they are out of stock");
+      }
+
+      // Build full cart objects expected by frontend/checkout
+      const final = res.data.reserved_items.map((i) => ({
+        id: i.product_id,
+        qty: i.qty,
+        product_name: i.product_name,
+        price: Number(i.price) || 0,
+        offer_price: i.offer_price ? Number(i.offer_price) : null,
+        product_image: i.product_image,
+        variant_label: i.variant_label ?? null 
+        // include any other fields you need in checkout UI
+      }));
+
+      // update Redux & localStorage — now checkout will have full details, not NaN
+      dispatch(setCart(final));
+
+      // go to checkout page
+      navigate("/checkout");
+    } catch (err) {
+      console.error("initiateCheckout error:", err);
+      toast.error("Unable to start checkout");
+    }
   };
+
+  const addItem = (product) => {
+  // Use dynamic stock fetched from backend
+  const availableStock = stocks[product.id] ?? product.stock_quantity;
+
+  // Prevent cart from exceeding available stock
+  if (availableStock && getCartQty(product.id) >= availableStock) {
+    setStockError(prev => ({ ...prev, [product.id]: true }));
+    setTimeout(() => {
+      setStockError(prev => ({ ...prev, [product.id]: false }));
+    }, 3000);
+    return;
+  }
+
+  // Attach variant label (Ex: "500 ml", "1 kg")
+  const productWithVariant = {
+    ...product,
+    variant_label:
+      product.quantity && product.quantity_unit
+        ? `${product.quantity} ${product.quantity_unit}`
+        : null
+  };
+
+  dispatch(addCart(productWithVariant));
+};
+
 
   const removeItem = (product) => {
     dispatch(delCart(product));
@@ -237,7 +302,7 @@ const badgeStyleSimullar = {
     const stockLow = available <= 10 && available > 0;
 
     return (
-      <div className="container my-5 py-2">
+      <div className="container mt-3 mb-2 py-2">
         <div className="row align-items-center">
           <div className="col-md-6 col-sm-12 py-3 text-center">
             <div className="product-image-wrapper" style={{ position: "relative" }}>
@@ -326,10 +391,11 @@ const badgeStyleSimullar = {
               Rating: {product.average_rating} <i className="fa fa-star text-warning"></i>
               <button
                 className="btn btn-link p-0 text-success fw-semibold"
-                onClick={() => openReviewModal(product.id)}
+                onClick={goToReviews}
               >
                 View Reviews
               </button>
+
             </p>
 
             <h4 className="text-success my-2">
@@ -428,20 +494,8 @@ const badgeStyleSimullar = {
                   </div>
                 )}
                 <button
-                  className="btn-green mb-2"
-                  onClick={() => {
-                    const token = sessionStorage.getItem("access");
-
-                    if (!token) {
-                      sessionStorage.setItem("redirect_toast", "Please login first to continue checkout");
-                      setTimeout(() => {
-                        window.location.href = "/login";
-                      }, 800);
-                      return;
-                    }
-
-                    window.location.href = "/checkout";
-                  }}
+                  className="btn-themed btn-lg w-100 text-center"
+                  onClick={initiateCheckout}
                 >
                   Go to checkout
                 </button>
@@ -598,41 +652,31 @@ const badgeStyleSimullar = {
       </div>
     </div>
   );
-  const openReviewModal = (productId) => {
-    setFeedbackProductId(productId);
-    setShowReviewModal(true);
-    fetchReviews(productId, 1);
-  };
-
-  const fetchReviews = async (productId, pageNo = 1) => {
-    setLoadingReviews(true);
-    try {
-      const res = await api.get(`/product-feedback-list/${productId}/?page=${pageNo}`);
-      const pageData = res.data;
-      const data = pageData?.results?.data || [];
-      setReviews(data);
-      setPage(pageNo);
-      setHasNext(Boolean(pageData?.next));
-    } catch (err) {
-      console.error("Review fetch failed:", err);
-      toast.error("Failed to load reviews");
-    } finally {
-      setLoadingReviews(false);
-    }
-  };
-
 
   return (
     <>
       <Navbar />
-      <div style={{ backgroundColor: "#fffaf4", minHeight: "100vh" }}>
+      <div style={{ backgroundColor: "#fffaf4" }}>
         {loading || !product ? <LoadingProduct /> : <ShowProduct />}
+        <div className="container pt-3 pb-5" ref={reviewRef}>
+
+          {product?.id && <ReviewBox productId={product.id} />}
+        </div>
         {loadingSimilar ? <LoadingSimilar /> : <ShowSimilarProducts />}
+
       </div>
       <Footer />
 
       {/* Theme Styles */}
       <style>{`
+
+      .review-section {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
      /* 🖼️ FIXED IMAGE BOX */
 .product-image-wrapper {
   background: #fffaf4;
@@ -1097,62 +1141,6 @@ const badgeStyleSimullar = {
               <button
                 className="btn-themed"
                 onClick={() => setShowDescModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showReviewModal && (
-        <div className="review-modal">
-          <div className="review-content p-4 rounded shadow">
-            <h5 className="text-success fw-bold mb-3">Product Reviews</h5>
-
-            {loadingReviews ? (
-              <p className="text-center">Loading...</p>
-            ) : reviews.length === 0 ? (
-              <p className="text-center text-muted">No reviews yet.</p>
-            ) : (
-              <div className="review-list">
-                {reviews.map((rev) => (
-                  <div key={rev.id} className="review-item mb-3 pb-2 border-bottom">
-                    <strong>{rev.user_name}</strong>
-                    <div className="text-warning">
-                      {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
-                    </div>
-                    <p className="mb-1 text-secondary small">{rev.comment}</p>
-                    <small className="text-muted">
-                      {new Date(rev.created_at).toLocaleDateString()}
-                    </small>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <button
-                className="btn-nav"
-                disabled={page === 1}
-                onClick={() => fetchReviews(feedbackProductId, page - 1)}
-              >
-                Prev
-              </button>
-              <button
-                className="btn-nav"
-                disabled={!hasNext}
-                onClick={() => fetchReviews(feedbackProductId, page + 1)}
-              >
-                Next
-              </button>
-            </div>
-
-            <div className="modal-footer justify-content-center">
-              <button
-                className="btn-themed"
-                onClick={() => setShowReviewModal(false)}
               >
                 Close
               </button>
